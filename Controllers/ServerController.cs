@@ -29,16 +29,32 @@ namespace factorio.Controllers
 
         // GET: api/Server/5
         [HttpGet("{slug}", Name = "Get")]
-        public Server Get(string slug)
+        public IActionResult Get(string slug)
         {
-            return _servers.getById(slug);
+            if (_servers.idExists(slug))
+            {
+                return Ok(_servers.getById(slug));
+            }
+            else
+            {
+                return NotFound();
+            }
         }
 
         // POST: api/Server
         [HttpPost]
-        public string Post([FromBody] Server value)
+        public IActionResult Post([FromBody] Server value)
         {
-            return _servers.addServer(value);
+            string newId;
+
+            if (_servers.tryAddServer(value, out newId))
+            {
+                return Ok(newId);
+            }
+            else
+            {
+                return this.BadRequest();
+            }
         }
 
         // PUT: api/Server/5

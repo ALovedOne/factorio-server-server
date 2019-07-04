@@ -29,6 +29,7 @@ export class Home extends Component {
                         <th>Name</th>
                         <th>Port</th>
                         <th>Version</th>
+                        <th>Last Save</th>
                         <th>Description</th>
                         <th></th>
                     </tr>
@@ -38,7 +39,8 @@ export class Home extends Component {
                         <tr key={s.slug}>
                             <td>{s.name}</td>
                             <td>{s.port}</td>
-                            <td>{s.majorVersion}.{s.minorVersion ? s.minorVersion : 'x'}</td>
+                            <td>{s.targetMajorVersion}.{s.targetMinorVersion ? s.targetMinorVersion : 'x'}</td>
+                            <td>{s.lastSaveMajorVersion ? `${s.lastSaveMajorVersion}.${s.lastSaveMinorVersion}` : ''}</td>
                             <td>{s.description}</td>
                             <td>
                                 <Link to={`edit/${s.slug}`}>Edit</Link>
@@ -62,7 +64,6 @@ export class Home extends Component {
 
         return (
             <div>
-                <h1>Servers</h1>
                 {contents}
                 <Button onClick={() => this.addServer()} >
                     Add

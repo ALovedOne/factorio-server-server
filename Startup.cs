@@ -23,7 +23,8 @@ namespace factorio
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
-            services.AddSingleton<IServerProvider, ServerProvider> ();
+            // Created once per request
+            services.AddScoped<IServerProvider, ServerProvider> ();
 
             // In production, the React files will be served from this directory
             services.AddSpaStaticFiles(configuration =>

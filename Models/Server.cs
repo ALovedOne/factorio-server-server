@@ -7,12 +7,23 @@ namespace factorio.Models
 {
     public class Server
     {
+        // From server-info.json
         public string Slug { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
-        public int MajorVersion { get; set; }
-        public int? MinorVersion { get; set; } // Minor version null => latest
+        public int TargetMajorVersion { get; set; }
+        public int? TargetMinorVersion { get; set; } // Minor version null => latest
+
+        // From mods directory
         public IEnumerable<Mod> Mods { get; set; }
+
+        // From saves directory
+        public int? LastSaveMajorVersion { get; set; }
+        public int? LastSaveMinorVersion { get; set; }
+        // TODO:
+        //  - preview.jpg
+
+        // From Docker
         public int? Port { get; set; }
     }
 }

@@ -1,7 +1,7 @@
+using Factorio.Execution;
 using Factorio.Persistence;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SpaServices.ReactDevelopmentServer;
 using Microsoft.Extensions.Configuration;
@@ -24,7 +24,8 @@ namespace Factorio
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
             // Created once per request
-            services.AddScoped<IInstanceProvider, LocalInstanceProvider> ();
+            services.AddScoped<IInstanceProvider, LocalInstanceProvider>();
+            services.AddSingleton<IRunnerService, DockerRunnerService>();
 
             // In production, the React files will be served from this directory
             services.AddSpaStaticFiles(configuration =>

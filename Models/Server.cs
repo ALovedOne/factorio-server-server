@@ -7,8 +7,9 @@ namespace factorio.Models
 {
     public class Server
     {
-        // From server-info.json
         public string Slug { get; set; }
+
+        // From server-info.json
         public string Name { get; set; }
         public string Description { get; set; }
         public int TargetMajorVersion { get; set; }

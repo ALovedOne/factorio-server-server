@@ -50,7 +50,6 @@ export class EditServer extends Component {
     handleInputChange(event, name) {
         const target = event.target;
         const value = event.type === 'checkbox' ? target.checked : target.value;
-        //const name = target.name;
 
         const server = Object.assign({}, this.state.server, { [name]: value });
         // Partial update
@@ -83,14 +82,14 @@ export class EditServer extends Component {
                     </Form.Group>
                     <Form.Control
                         placeholder="major"
-                        value={server.majorVersion}
-                        onChange={(event) => this.handleInputChange(event, "majorVersion")}
+                        value={server.targetMajorVersion}
+                        onChange={(event) => this.handleInputChange(event, "targetMajorVersion")}
                     />
                     <Form.Control
                         placeholder="minor"
-                        value={server.minorVersion}
-                        onChange={(event) => this.handleInputChange(event, "minorVersion")}
-                        disabled={!server.majorVersion}
+                        value={server.targetMinorVersion}
+                        onChange={(event) => this.handleInputChange(event, "targetMinorVersion")}
+                        disabled={!server.targetMajorVersion}
                     />
                     <Button
                         variant="primary"

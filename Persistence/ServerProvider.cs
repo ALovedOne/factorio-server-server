@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using Slugify;
 using Docker.DotNet;
 using System.IO.Compression;
+using Microsoft.Extensions.Configuration;
 
 //https://hub.docker.com/v2/repositories/factoriotools/factorio/tags/
 // TODO - concurrency
@@ -17,27 +18,41 @@ namespace factorio.Persistence
     {
         // Constants
         private const string SERVER_INFO_FILE_NAME = "server-info.json";
+        private const string CONFIG_SECTION_NAME = "LocalPersistenceProvider";
 
-        // Static config
-        private const string _base = @"C:\Users\mike\Desktop\opt";
 
+
+        // Static Config
         private DirectoryInfo _baseDirectory;
         private ISlugHelper _slug;
 
-        public ServerProvider()
+        // TODO - add config consumption here
+        public ServerProvider(IConfiguration config)
         {
-            _baseDirectory = new DirectoryInfo(_base);
+            IConfigurationSection section = config.GetSection(CONFIG_SECTION_NAME);
+            string serverBaseDirectoryPath = section.GetValue<string>("BaseDirectory");
+
+            _baseDirectory = new DirectoryInfo(serverBaseDirectoryPath);
             _slug = new SlugHelper(new SlugHelper.Config());
+        }
+
+        private bool verify() {
+            // TODO - check permissions
+            return _baseDirectory.Exists;
         }
 
         public IEnumerable<Server> getAll()
         {
+            if (_baseDirectory.Exists){
             return _baseDirectory.EnumerateDirectories().Select(d => loadSingleDirectory(d));
+            } else {
+                return new Server[0];
+            }
         }
 
         public Server getById(string slug)
         {
-            DirectoryInfo d = GetDirectory(slug);
+            DirectoryInfo d = GetServerDirectory(slug);
 
             if (d.Exists)
             {
@@ -51,7 +66,7 @@ namespace factorio.Persistence
 
         public bool idExists(string slug)
         {
-            DirectoryInfo d = GetDirectory(slug);
+            DirectoryInfo d = GetServerDirectory(slug);
             return d.Exists;
         }
 
@@ -60,9 +75,9 @@ namespace factorio.Persistence
             newId = _slug.GenerateSlug(newServer.Name);
 
             // verify uniqueness of slug
-            if (_baseDirectory.EnumerateDirectories(newId).Count() > 0)
+            if (idExists(newId))
             {
-                newId = "";
+                newId="";
                 return false;
             }
 
@@ -87,7 +102,7 @@ namespace factorio.Persistence
         public void updateServer(string slug, Server value)
         {
             // TODO - write to file system and update environments
-            DirectoryInfo d = GetDirectory(slug);
+            DirectoryInfo d = GetServerDirectory(slug);
 
             if (!d.Exists)
             {
@@ -108,7 +123,7 @@ namespace factorio.Persistence
             }
         }
 
-        private DirectoryInfo GetDirectory(string slug)
+        private DirectoryInfo GetServerDirectory(string slug)
         {
             return new DirectoryInfo(Path.Combine(this._baseDirectory.FullName, slug));
         }

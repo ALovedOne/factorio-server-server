@@ -14,38 +14,47 @@ using Microsoft.Extensions.Configuration;
 // TODO - concurrency
 namespace factorio.Persistence
 {
-    public class ServerProvider : IServerProvider
+    public class LocalInstanceProvider : IInstanceProvider
     {
         // Constants
         private const string SERVER_INFO_FILE_NAME = "server-info.json";
         private const string CONFIG_SECTION_NAME = "LocalPersistenceProvider";
-
-
+        private const string CONFIG_BASE_DIR_VALUE_NAME = "BaseDirectory";
 
         // Static Config
         private DirectoryInfo _baseDirectory;
         private ISlugHelper _slug;
 
-        // TODO - add config consumption here
-        public ServerProvider(IConfiguration config)
+        public LocalInstanceProvider(IConfiguration config)
         {
             IConfigurationSection section = config.GetSection(CONFIG_SECTION_NAME);
-            string serverBaseDirectoryPath = section.GetValue<string>("BaseDirectory");
+            string serverBaseDirectoryPath = section.GetValue<string>(CONFIG_BASE_DIR_VALUE_NAME);
 
+            // TODO - replace with call to other constructor
+            _baseDirectory = new DirectoryInfo(serverBaseDirectoryPath);
+            _slug = new SlugHelper(new SlugHelper.Config());
+        } 
+
+        public LocalInstanceProvider(string serverBaseDirectoryPath)
+        {
             _baseDirectory = new DirectoryInfo(serverBaseDirectoryPath);
             _slug = new SlugHelper(new SlugHelper.Config());
         }
 
-        private bool verify() {
+        private bool verify()
+        {
             // TODO - check permissions
             return _baseDirectory.Exists;
         }
 
         public IEnumerable<Server> getAll()
         {
-            if (_baseDirectory.Exists){
-            return _baseDirectory.EnumerateDirectories().Select(d => loadSingleDirectory(d));
-            } else {
+            if (_baseDirectory.Exists)
+            {
+                return _baseDirectory.EnumerateDirectories().Select(d => loadSingleDirectory(d));
+            }
+            else
+            {
                 return new Server[0];
             }
         }
@@ -77,7 +86,7 @@ namespace factorio.Persistence
             // verify uniqueness of slug
             if (idExists(newId))
             {
-                newId="";
+                newId = "";
                 return false;
             }
 
@@ -159,7 +168,7 @@ namespace factorio.Persistence
 
             if (directories.Length > 0)
             {
-                FileInfo[] gameSaves = directories[0].GetFiles();
+                FileInfo[] gameSaves = directories[0].GetFiles("*.zip");
                 return gameSaves.OrderByDescending(fInfo => fInfo.LastWriteTime).FirstOrDefault();
             }
             return null;

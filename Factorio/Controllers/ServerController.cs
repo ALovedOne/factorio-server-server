@@ -13,9 +13,9 @@ namespace factorio.Controllers
     [ApiController]
     public class ServerController : ControllerBase
     {
-        private IServerProvider _servers;
+        private IInstanceProvider _servers;
 
-        public ServerController(IServerProvider servers)
+        public ServerController(IInstanceProvider servers)
         {
             _servers = servers;
         }

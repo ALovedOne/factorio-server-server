@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace factorio.Persistence
 {
-    public interface IServerProvider
+    public interface IInstanceProvider
     {
         IEnumerable<Server> getAll();
         Server getById(string  slug);

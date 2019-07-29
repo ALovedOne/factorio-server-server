@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using factorio.Models;
-using factorio.Persistence;
-using Microsoft.AspNetCore.Http;
+﻿using Factorio.Persistence;
+using Factorio.Persistence.Models;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 
-namespace factorio.Controllers
+namespace Factorio.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -22,7 +18,7 @@ namespace factorio.Controllers
 
         // GET: api/Server
         [HttpGet]
-        public IEnumerable<Server> Get()
+        public IEnumerable<IInstance> Get()
         {
             return _servers.getAll();
         }
@@ -43,7 +39,7 @@ namespace factorio.Controllers
 
         // POST: api/Server
         [HttpPost]
-        public IActionResult Post([FromBody] Server value)
+        public IActionResult Post([FromBody] Instance value)
         {
             string newId;
 
@@ -59,7 +55,7 @@ namespace factorio.Controllers
 
         // PUT: api/Server/5
         [HttpPut("{slug}")]
-        public void Put(string slug, [FromBody] Server value)
+        public void Put(string slug, [FromBody] Instance value)
         {
             _servers.updateServer(slug, value);
         }

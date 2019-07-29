@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
-namespace factorio.Models
+namespace Factorio.Persistence.Models
 {
-    public class Server
+    public class Instance : IInstance
     {
         public string Slug { get; set; }
 
@@ -13,7 +10,7 @@ namespace factorio.Models
         public string Name { get; set; }
         public string Description { get; set; }
         public int TargetMajorVersion { get; set; }
-        public int? TargetMinorVersion { get; set; } // Minor version null => latest
+        public int? TargetMinorVersion { get; set; }
 
         // From mods directory
         public IEnumerable<Mod> Mods { get; set; }
@@ -23,8 +20,5 @@ namespace factorio.Models
         public int? LastSaveMinorVersion { get; set; }
         // TODO:
         //  - preview.jpg
-
-        // From Docker
-        public int? Port { get; set; }
     }
 }

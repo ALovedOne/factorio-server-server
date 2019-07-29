@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.645
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "factorio", "Factorio\factorio.csproj", "{817E90D4-A485-4631-918E-96F87B05724A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Factorio", "Factorio\Factorio.csproj", "{817E90D4-A485-4631-918E-96F87B05724A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Factorio.Test", "Factorio.Test\Factorio.Test.csproj", "{1669759D-3155-4201-A8FF-A1CE1A5B9E52}"
 EndProject

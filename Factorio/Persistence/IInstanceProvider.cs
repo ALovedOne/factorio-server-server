@@ -1,15 +1,14 @@
-﻿using factorio.Models;
-using Microsoft.AspNetCore.Mvc;
+﻿using Factorio.Persistence.Models;
 using System.Collections.Generic;
 
-namespace factorio.Persistence
+namespace Factorio.Persistence
 {
     public interface IInstanceProvider
     {
-        IEnumerable<Server> getAll();
-        Server getById(string  slug);
-        void updateServer(string slug, Server value);
+        IEnumerable<IInstance> getAll();
+        Instance getById(string  slug);
+        void updateServer(string slug, Instance value);
         bool idExists(string slug);
-        bool tryAddServer(Server value, out string newId);
+        bool tryAddServer(Instance value, out string newId);
     }
 }

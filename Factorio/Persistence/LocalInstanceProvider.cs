@@ -1,18 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using factorio.Models;
+﻿using Factorio.Persistence.Models;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using Slugify;
-using Docker.DotNet;
+using System.Collections.Generic;
+using System.IO;
 using System.IO.Compression;
-using Microsoft.Extensions.Configuration;
+using System.Linq;
 
 //https://hub.docker.com/v2/repositories/factoriotools/factorio/tags/
 // TODO - concurrency
-namespace factorio.Persistence
+namespace Factorio.Persistence
 {
     public class LocalInstanceProvider : IInstanceProvider
     {
@@ -33,7 +30,7 @@ namespace factorio.Persistence
             // TODO - replace with call to other constructor
             _baseDirectory = new DirectoryInfo(serverBaseDirectoryPath);
             _slug = new SlugHelper(new SlugHelper.Config());
-        } 
+        }
 
         public LocalInstanceProvider(string serverBaseDirectoryPath)
         {
@@ -47,7 +44,7 @@ namespace factorio.Persistence
             return _baseDirectory.Exists;
         }
 
-        public IEnumerable<Server> getAll()
+        public IEnumerable<IInstance> getAll()
         {
             if (_baseDirectory.Exists)
             {
@@ -55,11 +52,11 @@ namespace factorio.Persistence
             }
             else
             {
-                return new Server[0];
+                return new Instance[0];
             }
         }
 
-        public Server getById(string slug)
+        public Instance getById(string slug)
         {
             DirectoryInfo d = GetServerDirectory(slug);
 
@@ -79,7 +76,7 @@ namespace factorio.Persistence
             return d.Exists;
         }
 
-        public bool tryAddServer(Server newServer, out string newId)
+        public bool tryAddServer(Instance newServer, out string newId)
         {
             newId = _slug.GenerateSlug(newServer.Name);
 
@@ -108,7 +105,7 @@ namespace factorio.Persistence
             return true;
         }
 
-        public void updateServer(string slug, Server value)
+        public void updateServer(string slug, Instance value)
         {
             // TODO - write to file system and update environments
             DirectoryInfo d = GetServerDirectory(slug);
@@ -138,9 +135,9 @@ namespace factorio.Persistence
         }
 
         #region Loading Servers
-        private Server loadSingleDirectory(DirectoryInfo d)
+        private Instance loadSingleDirectory(DirectoryInfo d)
         {
-            Server ret = loadEmptyServer(d);
+            Instance ret = loadEmptyServer(d);
 
             FileInfo gameInfo = getServerInfo(d);
             if (gameInfo != null)
@@ -195,9 +192,9 @@ namespace factorio.Persistence
         /// </summary>
         /// <param name="serverFolder">The game folder</param>
         /// <returns>A partial Server object</returns>
-        private Server loadEmptyServer(DirectoryInfo serverFolder)
+        private Instance loadEmptyServer(DirectoryInfo serverFolder)
         {
-            return new Server()
+            return new Instance()
             {
                 Slug = serverFolder.Name,
                 Name = serverFolder.Name,
@@ -210,7 +207,7 @@ namespace factorio.Persistence
         /// </summary>
         /// <param name="file">The server-info.json file</param>
         /// <param name="s">The output server object</param>
-        private void loadServerFieldsFromJSON(FileInfo serverInfoFile, Server s)
+        private void loadServerFieldsFromJSON(FileInfo serverInfoFile, Instance s)
         {
 
             ServerInfoFile sInfo = null;
@@ -233,7 +230,7 @@ namespace factorio.Persistence
         /// </summary>
         /// <param name="gameSaveFile">The game save zip file</param>
         /// <param name="server">The putput server</param>
-        private void loadServerFieldsFromGameSave(FileInfo gameSaveFile, Server server)
+        private void loadServerFieldsFromGameSave(FileInfo gameSaveFile, Instance server)
         {
             // TODO
             using (ZipArchive archive = ZipFile.OpenRead(gameSaveFile.FullName))

@@ -9,33 +9,19 @@ using Xunit;
 
 namespace Factorio.Test
 {
-    public class LocalInstanceProviderTest : IDisposable
+    public class LocalInstanceProviderTest : TestWithStuff
     {
-        private DirectoryInfo _testDir;
         private IInstanceProvider _instanceProvider;
 
-        public LocalInstanceProviderTest()
+        public LocalInstanceProviderTest() : base()
         {
-            DirectoryInfo userTempDir = new DirectoryInfo(Path.GetTempPath());
-            string randomName = Path.GetRandomFileName();
-
-            this._testDir = userTempDir.CreateSubdirectory(randomName);
-
             IConfigurationRoot configRoot = new ConfigurationBuilder()
                 .AddInMemoryCollection(new List<KeyValuePair<string, string>>
                 {
-                    new KeyValuePair<string, string>("LocalPersistenceProvider:BaseDirectory",this._testDir.FullName)
+                    new KeyValuePair<string, string>("LocalPersistenceProvider:BaseDirectory",this.FullPath)
                 })
                 .Build();
             this._instanceProvider = new LocalInstanceProvider(configRoot);
-        }
-
-        public void Dispose()
-        {
-            if (this._testDir.Exists)
-            {
-                this._testDir.Delete(true);
-            }
         }
 
         [Fact]
@@ -143,24 +129,5 @@ namespace Factorio.Test
             List<IInstance> all = new List<IInstance>(this._instanceProvider.getAll());
             Assert.Single(all);
         }
-
-
-
-
-        private void addTestSave(string saveFile)
-        {
-            string pathAssembly = System.Reflection.Assembly.GetExecutingAssembly().Location;
-            string folderAssembly = Path.GetDirectoryName(pathAssembly);
-
-            string zipFileName = Path.Combine(folderAssembly, "TestData", saveFile + ".zip");
-            ZipFile.ExtractToDirectory(zipFileName, this._testDir.FullName);
-        }
-
-        private void addBlankDir(string dirName)
-        {
-            this._testDir.CreateSubdirectory(dirName);
-        }
-
-
     }
 }

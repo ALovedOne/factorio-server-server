@@ -198,7 +198,8 @@ namespace Factorio.Persistence
             {
                 Slug = serverFolder.Name,
                 Name = serverFolder.Name,
-                Description = "*** TODO ***",
+                Description = "",
+                LocalPath = serverFolder.FullName
             };
         }
 

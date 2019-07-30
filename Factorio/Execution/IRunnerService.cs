@@ -9,6 +9,8 @@ namespace Factorio.Execution
         Task<IEnumerable<IRunningInstance>> getRunningInstancesAsync();
         // Get by id
         Task<IRunningInstance> startInstanceAsync(string host, int port, IInstance instance);
-        // stop
+
+        Task stopInstanceAsync(string host, int port);
+        Task stopInstanceAsync(string key);
     }
 }

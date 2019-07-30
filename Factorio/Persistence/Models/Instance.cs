@@ -20,5 +20,7 @@ namespace Factorio.Persistence.Models
         public int? LastSaveMinorVersion { get; set; }
         // TODO:
         //  - preview.jpg
+
+        public string LocalPath { get; set; }
     }
 }

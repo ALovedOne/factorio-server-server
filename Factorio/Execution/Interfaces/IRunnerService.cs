@@ -3,7 +3,7 @@ using Factorio.Persistence.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Factorio.Execution
+namespace Factorio.Execution.Interfaces
 {
     public interface IRunnerService
     {

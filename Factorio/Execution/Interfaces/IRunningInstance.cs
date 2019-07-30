@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Factorio.Execution
+namespace Factorio.Execution.Interfaces
 {
     public interface IRunningInstance
     {

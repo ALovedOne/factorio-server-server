@@ -1,6 +1,7 @@
 ﻿using Docker.DotNet;
 using Docker.DotNet.Models;
 using Factorio.Execution;
+using Factorio.Execution.Interfaces;
 using Factorio.Persistence.Models;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -14,8 +15,8 @@ namespace Factorio.Test
 {
     public class DockerRunnerServiceTest : TestWithStuff, IDisposable
     {
-        private DockerClient _dockerClient;
-        private DockerRunnerService _service;
+        private readonly DockerClient _dockerClient;
+        private readonly DockerRunnerService _service;
 
         public DockerRunnerServiceTest() : base()
         {
@@ -31,7 +32,7 @@ namespace Factorio.Test
 
         public new void Dispose()
         {
-            Task killingContainers = this.killAllDockerInstancesAsync();
+            Task killingContainers = this.KillAllDockerInstancesAsync();
             killingContainers.Wait();
             base.Dispose();
         }
@@ -76,7 +77,7 @@ namespace Factorio.Test
             Assert.Equal(2, runningInstances.Count);
         }
 
-        private async Task killAllDockerInstancesAsync()
+        private async Task KillAllDockerInstancesAsync()
         {
             IList<ContainerListResponse> runningContainers = await this._dockerClient.Containers.ListContainersAsync(new ContainersListParameters
             {

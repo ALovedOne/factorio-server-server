@@ -192,10 +192,10 @@ namespace Factorio.Execution
 
         private string FormatVersion(IInstance instance)
         {
-            string version = string.Format("0.{0}", instance.TargetMajorVersion);
-            if (instance.TargetMinorVersion != null)
+            string version = string.Format("{0}.{1}", instance.TargetMajorVersion, instance.TargetMinorVersion);
+            if (instance.TargetPatchVersion != null)
             {
-                version = string.Format("{0}.{1}", version, instance.TargetMinorVersion);
+                version = string.Format("{0}.{1}", version, instance.TargetPatchVersion);
             }
 
             return version;

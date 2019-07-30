@@ -40,12 +40,34 @@ namespace Factorio.Test
         [Fact]
         public async Task TestStartInstanceAsync()
         {
-            Instance i = this.AddTestSave("save_15_40");
+            Instance i = this.AddBlankDir("blank-dir");
+
             IRunningInstance x = await this._service.StartInstanceAsync("localhost", 9999, i);
             DockerRunningInstance dockerInst = x as DockerRunningInstance;
 
             ContainerInspectResponse containerInfo = await this._dockerClient.Containers.InspectContainerAsync(dockerInst.ContainerID);
             Assert.Equal("factoriotools/factorio:0.17", containerInfo.Config.Image);
+
+            IList<PortBinding> udpPorts = containerInfo.NetworkSettings.Ports["34197/udp"];
+            Assert.Single(udpPorts);
+            Assert.Equal("9999", udpPorts[0].HostPort);
+
+            Assert.Single(containerInfo.Mounts);
+            Assert.Equal("/factorio", containerInfo.Mounts[0].Destination);
+            Assert.Equal("bind", containerInfo.Mounts[0].Type);
+            //Assert.Equal(i.LocalPath, containerInfo.Mounts[0].Source); // On windows this is a weird translation
+        }
+
+        [Fact]
+        public async Task TestStartInstance2Async()
+        {
+            Instance i = this.AddBlankDir("blank-dir", 54);
+
+            IRunningInstance x = await this._service.StartInstanceAsync("localhost", 9999, i);
+            DockerRunningInstance dockerInst = x as DockerRunningInstance;
+
+            ContainerInspectResponse containerInfo = await this._dockerClient.Containers.InspectContainerAsync(dockerInst.ContainerID);
+            Assert.Equal("factoriotools/factorio:0.17.54", containerInfo.Config.Image);
 
             IList<PortBinding> udpPorts = containerInfo.NetworkSettings.Ports["34197/udp"];
             Assert.Single(udpPorts);

@@ -149,7 +149,7 @@ namespace Factorio.Persistence
             FileInfo gameSave = GetActiveGameSave(d);
             if (gameSave != null)
             {
-                LoadServerFieldsFromGameSave(gameSave, ret);
+                ret.LastSave = Utils.SaveFolderParser.ParserZipFile(gameSave);
             }
 
             return ret;
@@ -222,42 +222,11 @@ namespace Factorio.Persistence
                 s.Key = serverInfoFile.Directory.Name;
                 s.Name = sInfo.Name;
                 s.Description = sInfo.Description;
-                s.TargetMajorVersion = sInfo.MajorVersion.GetValueOrDefault(17);
-                s.TargetMinorVersion = sInfo.MinorVersion;
-            }
-        }
-
-        /// <summary>
-        /// Loads fields from the game save zip file
-        /// </summary>
-        /// <param name="gameSaveFile">The game save zip file</param>
-        /// <param name="server">The putput server</param>
-        private void LoadServerFieldsFromGameSave(FileInfo gameSaveFile, Instance server)
-        {
-            // TODO
-            using (ZipArchive archive = ZipFile.OpenRead(gameSaveFile.FullName))
-            {
-                ZipArchiveEntry levelDAT = null;
-
-                foreach (ZipArchiveEntry e in archive.Entries)
-                {
-                    if (e.FullName.EndsWith("level.dat"))
-                    {
-                        levelDAT = e;
-                    }
-                }
-
-                if (levelDAT == null)
-                {
-                    return;
-                }
-
-                using (BinaryReader r = new BinaryReader(levelDAT.Open()))
-                {
-                    r.ReadInt16();
-                    server.LastSaveMajorVersion = r.ReadInt16();
-                    server.LastSaveMinorVersion = r.ReadInt16();
-                }
+                s.TargetMajorVersion = sInfo.MajorVersion.GetValueOrDefault(0);
+                s.TargetMinorVersion = sInfo.MinorVersion.GetValueOrDefault(17);
+                s.TargetPatchVersion = sInfo.PatchVersion;
+                // TODO
+                
             }
         }
         #endregion
@@ -269,7 +238,9 @@ namespace Factorio.Persistence
             public string Description;
             public int? MajorVersion;
             public int? MinorVersion;
+            public int? PatchVersion;
         }
+
         private class ModFile
         {
             public List<ModEntry> Mods;

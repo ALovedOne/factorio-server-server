@@ -10,17 +10,15 @@ namespace Factorio.Persistence.Models
         // From server-info.json
         public string Name { get; set; }
         public string Description { get; set; }
+        
         public int TargetMajorVersion { get; set; }
-        public int? TargetMinorVersion { get; set; }
+        public int TargetMinorVersion { get; set; }
+        public int? TargetPatchVersion { get; set; }
 
         // From mods directory
-        public IEnumerable<IMod> Mods { get; set; }
+        public IEnumerable<Mod> Mods { get; set; }
 
-        // From saves directory
-        public int? LastSaveMajorVersion { get; set; }
-        public int? LastSaveMinorVersion { get; set; }
-        // TODO:
-        //  - preview.jpg
+        public GameSave LastSave { get; set; }
 
         public string LocalPath { get; set; }
     }

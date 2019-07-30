@@ -41,20 +41,23 @@ namespace Factorio.Test
             {
                 Key = "test-server-" + saveFile,
                 LocalPath = Path.Combine(this._testDir.FullName, saveFile),
-                TargetMajorVersion = 17,
-                TargetMinorVersion = null
+               
+                TargetMajorVersion = 0,
+                TargetMinorVersion = 17,
+                TargetPatchVersion = 20
             };
         }
 
-        protected Instance AddBlankDir(string dirName)
+        protected Instance AddBlankDir(string dirName, int? PatchVersion = null)
         {
             DirectoryInfo d = this._testDir.CreateSubdirectory(dirName);
             return new Instance
             {
                 Key = "test-server-" + dirName,
                 LocalPath = d.FullName,
-                TargetMajorVersion = 17,
-                TargetMinorVersion = null
+                TargetMajorVersion = 0,
+                TargetMinorVersion = 17,
+                TargetPatchVersion = PatchVersion
             };
         }
     }

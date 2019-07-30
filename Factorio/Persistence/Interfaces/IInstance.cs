@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Factorio.Persistence.Models;
+using System.Collections.Generic;
 
 namespace Factorio.Persistence.Interfaces
 {
@@ -10,20 +11,16 @@ namespace Factorio.Persistence.Interfaces
         string Name { get; set; }
         string Description { get; set; }
         int TargetMajorVersion { get; set; }
-        int? TargetMinorVersion { get; set; }
+        int TargetMinorVersion { get; set; }
+        int? TargetPatchVersion { get; set; }
+
 
         // From mods directory
-        IEnumerable<IMod> Mods { get; set; }
+        IEnumerable<Mod> Mods { get; set; }
 
         // From saves directory
-        int? LastSaveMajorVersion { get; set; }
-        int? LastSaveMinorVersion { get; set; }
+        GameSave LastSave { get; set; }
         // TODO:
         //  - preview.jpg
-    }
-
-    public interface IMod
-    {
-        string Name { get; set; }
     }
 }

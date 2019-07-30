@@ -46,7 +46,7 @@ namespace Factorio.Test
             Instance testInstance = this._instanceProvider.GetById("save_17_50") as Instance;
             Assert.NotNull(testInstance);
             Assert.Equal("save_17_50", testInstance.Key);
-            Assert.Equal(17, testInstance.LastSaveMajorVersion);
+            Assert.Equal(17, testInstance.LastSave.MinorVersion);
         }
 
         [Fact]
@@ -87,8 +87,8 @@ namespace Factorio.Test
             Instance newServer = this._instanceProvider.GetById(newId) as Instance;
             Assert.Equal("New Description", newServer.Description);
             Assert.Equal("New Dir", newServer.Name);
-            Assert.Equal(17, newServer.TargetMajorVersion);
-            Assert.Equal(20, newServer.TargetMinorVersion);
+            Assert.Equal(17, newServer.TargetMinorVersion);
+            Assert.Equal(20, newServer.TargetPatchVersion);
         }
 
         [Fact]
@@ -114,8 +114,9 @@ namespace Factorio.Test
             Assert.Single(all);
 
             IInstance testInstance = all[0];
-            Assert.Equal(17, testInstance.LastSaveMajorVersion);
-            Assert.Equal(50, testInstance.LastSaveMinorVersion);
+            Assert.Equal(0, testInstance.LastSave.MajorVersion);
+            Assert.Equal(17, testInstance.LastSave.MinorVersion);
+            Assert.Equal(50, testInstance.LastSave.PatchVersion);
         }
 
         [Fact]

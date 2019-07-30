@@ -9,7 +9,7 @@ namespace Factorio.Test
 {
     public class TestWithStuff : IDisposable
     {
-        private DirectoryInfo _testDir;
+        private readonly DirectoryInfo _testDir;
 
         public TestWithStuff()
         {
@@ -29,7 +29,7 @@ namespace Factorio.Test
 
         protected string FullPath { get { return this._testDir.FullName; } }
 
-        protected Instance addTestSave(string saveFile)
+        protected Instance AddTestSave(string saveFile)
         {
             string pathAssembly = System.Reflection.Assembly.GetExecutingAssembly().Location;
             string folderAssembly = Path.GetDirectoryName(pathAssembly);
@@ -46,7 +46,7 @@ namespace Factorio.Test
             };
         }
 
-        protected Instance addBlankDir(string dirName)
+        protected Instance AddBlankDir(string dirName)
         {
             DirectoryInfo d = this._testDir.CreateSubdirectory(dirName);
             return new Instance

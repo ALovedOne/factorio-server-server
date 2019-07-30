@@ -7,11 +7,11 @@ namespace Factorio.Execution
 {
     public interface IRunnerService
     {
-        Task<IEnumerable<IRunningInstance>> getRunningInstancesAsync();
+        Task<IEnumerable<IRunningInstance>> GetRunningInstancesAsync();
         // Get by id
-        Task<IRunningInstance> startInstanceAsync(string host, int port, IInstance instance);
+        Task<IRunningInstance> StartInstanceAsync(string host, int port, IInstance instance);
 
-        Task stopInstanceAsync(string host, int port);
-        Task stopInstanceAsync(string key);
+        Task StopInstanceAsync(string host, int port);
+        Task StopInstanceAsync(string key);
     }
 }

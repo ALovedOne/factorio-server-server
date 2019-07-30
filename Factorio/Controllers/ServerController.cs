@@ -20,16 +20,16 @@ namespace Factorio.Controllers
         [HttpGet]
         public IEnumerable<IInstance> Get()
         {
-            return _servers.getAll();
+            return _servers.GetAll();
         }
 
         // GET: api/Server/5
         [HttpGet("{slug}", Name = "Get")]
         public IActionResult Get(string slug)
         {
-            if (_servers.idExists(slug))
+            if (_servers.IdExists(slug))
             {
-                return Ok(_servers.getById(slug));
+                return Ok(_servers.GetById(slug));
             }
             else
             {
@@ -41,9 +41,7 @@ namespace Factorio.Controllers
         [HttpPost]
         public IActionResult Post([FromBody] Instance value)
         {
-            string newId;
-
-            if (_servers.tryAddServer(value, out newId))
+            if (_servers.TryAddServer(value, out string newId))
             {
                 return Ok(newId);
             }
@@ -57,7 +55,7 @@ namespace Factorio.Controllers
         [HttpPut("{slug}")]
         public void Put(string slug, [FromBody] Instance value)
         {
-            _servers.updateServer(slug, value);
+            _servers.UpdateServer(slug, value);
         }
     }
 }

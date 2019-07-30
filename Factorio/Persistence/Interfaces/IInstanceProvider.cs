@@ -5,11 +5,11 @@ namespace Factorio.Persistence.Interfaces
 {
     public interface IInstanceProvider
     {
-        IEnumerable<IInstance> getAll();
-        IInstance getById(string key);
-        void updateServer(string key, IInstance value);
-        bool idExists(string slug);
+        IEnumerable<IInstance> GetAll();
+        IInstance GetById(string key);
+        void UpdateServer(string key, IInstance value);
+        bool IdExists(string slug);
 
-        bool tryAddServer(IInstance value, out string newId);
+        bool TryAddServer(IInstance value, out string newId);
     }
 }

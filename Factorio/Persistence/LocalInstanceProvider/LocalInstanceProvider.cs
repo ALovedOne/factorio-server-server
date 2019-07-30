@@ -39,17 +39,17 @@ namespace Factorio.Persistence
             _slug = new SlugHelper(new SlugHelper.Config());
         }
 
-        private bool verify()
+        private bool Verify()
         {
             // TODO - check permissions
             return _baseDirectory.Exists;
         }
 
-        public IEnumerable<IInstance> getAll()
+        public IEnumerable<IInstance> GetAll()
         {
             if (_baseDirectory.Exists)
             {
-                return _baseDirectory.EnumerateDirectories().Select(d => loadSingleDirectory(d));
+                return _baseDirectory.EnumerateDirectories().Select(d => LoadSingleDirectory(d));
             }
             else
             {
@@ -57,13 +57,13 @@ namespace Factorio.Persistence
             }
         }
 
-        public IInstance getById(string slug)
+        public IInstance GetById(string slug)
         {
             DirectoryInfo d = GetServerDirectory(slug);
 
             if (d.Exists)
             {
-                return loadSingleDirectory(d);
+                return LoadSingleDirectory(d);
             }
             else
             {
@@ -71,18 +71,18 @@ namespace Factorio.Persistence
             }
         }
 
-        public bool idExists(string slug)
+        public bool IdExists(string slug)
         {
             DirectoryInfo d = GetServerDirectory(slug);
             return d.Exists;
         }
 
-        public bool tryAddServer(IInstance newServer, out string newId)
+        public bool TryAddServer(IInstance newServer, out string newId)
         {
             newId = _slug.GenerateSlug(newServer.Name);
 
             // verify uniqueness of slug
-            if (idExists(newId))
+            if (IdExists(newId))
             {
                 newId = "";
                 return false;
@@ -106,7 +106,7 @@ namespace Factorio.Persistence
             return true;
         }
 
-        public void updateServer(string slug, IInstance value)
+        public void UpdateServer(string slug, IInstance value)
         {
             // TODO - write to file system and update environments
             DirectoryInfo d = GetServerDirectory(slug);
@@ -136,20 +136,20 @@ namespace Factorio.Persistence
         }
 
         #region Loading Servers
-        private Instance loadSingleDirectory(DirectoryInfo d)
+        private Instance LoadSingleDirectory(DirectoryInfo d)
         {
-            Instance ret = loadEmptyServer(d);
+            Instance ret = LoadEmptyServer(d);
 
-            FileInfo gameInfo = getServerInfo(d);
+            FileInfo gameInfo = GetServerInfo(d);
             if (gameInfo != null)
             {
-                loadServerFieldsFromJSON(gameInfo, ret);
+                LoadServerFieldsFromJSON(gameInfo, ret);
             }
 
-            FileInfo gameSave = getActiveGameSave(d);
+            FileInfo gameSave = GetActiveGameSave(d);
             if (gameSave != null)
             {
-                loadServerFieldsFromGameSave(gameSave, ret);
+                LoadServerFieldsFromGameSave(gameSave, ret);
             }
 
             return ret;
@@ -160,7 +160,7 @@ namespace Factorio.Persistence
         /// </summary>
         /// <param name="d">Directory of the game containing the saves, mods, and more</param>
         /// <returns>The FileInfo of the zip-file for the active save</returns>
-        private static FileInfo getActiveGameSave(DirectoryInfo d)
+        private static FileInfo GetActiveGameSave(DirectoryInfo d)
         {
             DirectoryInfo[] directories = d.GetDirectories("saves");
 
@@ -177,7 +177,7 @@ namespace Factorio.Persistence
         /// </summary>
         /// <param name="d">Directory of the game containing the saves, mods, and more</param>
         /// <returns>The FileInfo of the server-info.json file</returns>
-        private static FileInfo getServerInfo(DirectoryInfo d)
+        private static FileInfo GetServerInfo(DirectoryInfo d)
         {
             FileInfo[] file = d.GetFiles(SERVER_INFO_FILE_NAME);
             if (file.Length > 0)
@@ -193,7 +193,7 @@ namespace Factorio.Persistence
         /// </summary>
         /// <param name="serverFolder">The game folder</param>
         /// <returns>A partial Server object</returns>
-        private Instance loadEmptyServer(DirectoryInfo serverFolder)
+        private Instance LoadEmptyServer(DirectoryInfo serverFolder)
         {
             return new Instance()
             {
@@ -209,7 +209,7 @@ namespace Factorio.Persistence
         /// </summary>
         /// <param name="file">The server-info.json file</param>
         /// <param name="s">The output server object</param>
-        private void loadServerFieldsFromJSON(FileInfo serverInfoFile, Instance s)
+        private void LoadServerFieldsFromJSON(FileInfo serverInfoFile, Instance s)
         {
 
             ServerInfoFile sInfo = null;
@@ -232,7 +232,7 @@ namespace Factorio.Persistence
         /// </summary>
         /// <param name="gameSaveFile">The game save zip file</param>
         /// <param name="server">The putput server</param>
-        private void loadServerFieldsFromGameSave(FileInfo gameSaveFile, Instance server)
+        private void LoadServerFieldsFromGameSave(FileInfo gameSaveFile, Instance server)
         {
             // TODO
             using (ZipArchive archive = ZipFile.OpenRead(gameSaveFile.FullName))

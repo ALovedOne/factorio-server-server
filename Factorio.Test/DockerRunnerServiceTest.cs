@@ -39,8 +39,8 @@ namespace Factorio.Test
         [Fact]
         public async Task TestStartInstanceAsync()
         {
-            Instance i = this.addTestSave("save_15_40");
-            IRunningInstance x = await this._service.startInstanceAsync("localhost", 9999, i);
+            Instance i = this.AddTestSave("save_15_40");
+            IRunningInstance x = await this._service.StartInstanceAsync("localhost", 9999, i);
             DockerRunningInstance dockerInst = x as DockerRunningInstance;
 
             ContainerInspectResponse containerInfo = await this._dockerClient.Containers.InspectContainerAsync(dockerInst.ContainerID);
@@ -65,13 +65,13 @@ namespace Factorio.Test
         [Fact]
         public async Task TestGetRunningInstancesAsync()
         {
-            Instance i1 = this.addTestSave("save_15_40");
-            Instance i2 = this.addTestSave("save_17_50");
+            Instance i1 = this.AddTestSave("save_15_40");
+            Instance i2 = this.AddTestSave("save_17_50");
 
-            await this._service.startInstanceAsync("localhost", 9999, i1);
-            await this._service.startInstanceAsync("localhost", 9998, i2);
+            await this._service.StartInstanceAsync("localhost", 9999, i1);
+            await this._service.StartInstanceAsync("localhost", 9998, i2);
 
-            IList<IRunningInstance> runningInstances = new List<IRunningInstance>(await this._service.getRunningInstancesAsync());
+            IList<IRunningInstance> runningInstances = new List<IRunningInstance>(await this._service.GetRunningInstancesAsync());
 
             Assert.Equal(2, runningInstances.Count);
         }

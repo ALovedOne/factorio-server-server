@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using Factorio.Persistence.Interfaces;
+using System.Collections.Generic;
 
 namespace Factorio.Persistence.Models
 {
     public class Instance : IInstance
     {
-        public string Slug { get; set; }
+        public string Key { get; set; }
 
         // From server-info.json
         public string Name { get; set; }
@@ -13,7 +14,7 @@ namespace Factorio.Persistence.Models
         public int? TargetMinorVersion { get; set; }
 
         // From mods directory
-        public IEnumerable<Mod> Mods { get; set; }
+        public IEnumerable<IMod> Mods { get; set; }
 
         // From saves directory
         public int? LastSaveMajorVersion { get; set; }

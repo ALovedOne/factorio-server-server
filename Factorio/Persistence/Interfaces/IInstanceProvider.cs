@@ -1,14 +1,15 @@
 ﻿using Factorio.Persistence.Models;
 using System.Collections.Generic;
 
-namespace Factorio.Persistence
+namespace Factorio.Persistence.Interfaces
 {
     public interface IInstanceProvider
     {
         IEnumerable<IInstance> getAll();
-        Instance getById(string  slug);
-        void updateServer(string slug, Instance value);
+        IInstance getById(string key);
+        void updateServer(string key, IInstance value);
         bool idExists(string slug);
-        bool tryAddServer(Instance value, out string newId);
+
+        bool tryAddServer(IInstance value, out string newId);
     }
 }

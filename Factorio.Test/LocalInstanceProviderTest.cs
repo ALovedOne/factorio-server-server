@@ -1,4 +1,5 @@
 using Factorio.Persistence;
+using Factorio.Persistence.Interfaces;
 using Factorio.Persistence.Models;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -42,9 +43,9 @@ namespace Factorio.Test
             this.addTestSave("save_15_40");
             this.addTestSave("save_17_50");
 
-            Instance testInstance = this._instanceProvider.getById("save_17_50");
+            Instance testInstance = this._instanceProvider.getById("save_17_50") as Instance;
             Assert.NotNull(testInstance);
-            Assert.Equal("save_17_50", testInstance.Slug);
+            Assert.Equal("save_17_50", testInstance.Key);
             Assert.Equal(17, testInstance.LastSaveMajorVersion);
         }
 
@@ -87,7 +88,7 @@ namespace Factorio.Test
             }, out newId));
             Assert.Equal("new-dir", newId);
 
-            Instance newServer = this._instanceProvider.getById(newId);
+            Instance newServer = this._instanceProvider.getById(newId) as Instance;
             Assert.Equal("New Description", newServer.Description);
             Assert.Equal("New Dir", newServer.Name);
             Assert.Equal(17, newServer.TargetMajorVersion);
@@ -102,7 +103,7 @@ namespace Factorio.Test
             this.addTestSave("save_17_50");
 
             this._instanceProvider.updateServer("save_17_50", new Instance { Name = newServerName, Description = newServerDescription });
-            Instance testInstance = this._instanceProvider.getById("save_17_50");
+            Instance testInstance = this._instanceProvider.getById("save_17_50") as Instance;
 
             Assert.Equal(newServerName, testInstance.Name);
             Assert.Equal(newServerDescription, testInstance.Description);

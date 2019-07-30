@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Data;
 using System.Linq;
+using Factorio.Persistence.Interfaces;
 
 namespace Factorio.Execution
 {
@@ -66,7 +67,7 @@ namespace Factorio.Execution
                 };
             });
         }
-
+        
         public async Task<IRunningInstance> startInstanceAsync(string host, int port, IInstance instance)
         {
             Instance localInstance = instance as Instance;
@@ -80,7 +81,7 @@ namespace Factorio.Execution
                 Port = port,
 
                 Version = formatVersion(instance),
-                InstanceKey = instance.Slug,
+                InstanceKey = instance.Key,
 
                 ContainerID = newID,
             };
@@ -126,6 +127,7 @@ namespace Factorio.Execution
             return first.ID;
         }
 
+
         private async Task stopContainerByIDAsync(string containerID)
         {
             await this._dockerClient.Containers.RemoveContainerAsync(containerID, new ContainerRemoveParameters
@@ -155,12 +157,12 @@ namespace Factorio.Execution
                 {
                     Labels = new Dictionary<string, string>
                 {
-                    {DOCKER_LABEL_KEY, instance.Slug }
+                    {DOCKER_LABEL_KEY, instance.Key }
                 },
                     Volumes = new Dictionary<string, EmptyStruct> { { "/factorio", new EmptyStruct() } },
                     Image = "factoriotools/factorio:" + formatVersion(instance),
                     ExposedPorts = new Dictionary<string, EmptyStruct> { { "34197/udp", new EmptyStruct() } },
-                    Name = "factorio-server-" + instance.Slug,
+                    Name = "factorio-server-" + instance.Key,
                     HostConfig = new HostConfig
                     {
                         PortBindings = new Dictionary<string, IList<PortBinding>> { { "34197/udp", new[] { new PortBinding { HostPort = string.Format("{0}", port) } } } },
@@ -211,6 +213,8 @@ namespace Factorio.Execution
 
             return imageInfo.Config.Env.First(env => env.StartsWith("VERSION")).Split("=")[1];
         }
+
+
     }
 
     internal class ProgressSink : IProgress<JSONMessage>

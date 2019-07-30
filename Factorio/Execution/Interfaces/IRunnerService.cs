@@ -1,4 +1,5 @@
-﻿using Factorio.Persistence.Models;
+﻿using Factorio.Persistence.Interfaces;
+using Factorio.Persistence.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 

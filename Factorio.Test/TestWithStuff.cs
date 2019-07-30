@@ -39,7 +39,7 @@ namespace Factorio.Test
 
             return new Instance
             {
-                Slug = "test-server-" + saveFile,
+                Key = "test-server-" + saveFile,
                 LocalPath = Path.Combine(this._testDir.FullName, saveFile),
                 TargetMajorVersion = 17,
                 TargetMinorVersion = null
@@ -51,7 +51,7 @@ namespace Factorio.Test
             DirectoryInfo d = this._testDir.CreateSubdirectory(dirName);
             return new Instance
             {
-                Slug = "test-server-" + dirName,
+                Key = "test-server-" + dirName,
                 LocalPath = d.FullName,
                 TargetMajorVersion = 17,
                 TargetMinorVersion = null

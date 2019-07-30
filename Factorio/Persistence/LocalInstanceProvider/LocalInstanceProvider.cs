@@ -1,4 +1,5 @@
-﻿using Factorio.Persistence.Models;
+﻿using Factorio.Persistence.Interfaces;
+using Factorio.Persistence.Models;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using Slugify;
@@ -56,7 +57,7 @@ namespace Factorio.Persistence
             }
         }
 
-        public Instance getById(string slug)
+        public IInstance getById(string slug)
         {
             DirectoryInfo d = GetServerDirectory(slug);
 
@@ -76,7 +77,7 @@ namespace Factorio.Persistence
             return d.Exists;
         }
 
-        public bool tryAddServer(Instance newServer, out string newId)
+        public bool tryAddServer(IInstance newServer, out string newId)
         {
             newId = _slug.GenerateSlug(newServer.Name);
 
@@ -105,7 +106,7 @@ namespace Factorio.Persistence
             return true;
         }
 
-        public void updateServer(string slug, Instance value)
+        public void updateServer(string slug, IInstance value)
         {
             // TODO - write to file system and update environments
             DirectoryInfo d = GetServerDirectory(slug);
@@ -196,7 +197,7 @@ namespace Factorio.Persistence
         {
             return new Instance()
             {
-                Slug = serverFolder.Name,
+                Key = serverFolder.Name,
                 Name = serverFolder.Name,
                 Description = "",
                 LocalPath = serverFolder.FullName
@@ -218,7 +219,7 @@ namespace Factorio.Persistence
             }
             if (sInfo != null)
             {
-                s.Slug = serverInfoFile.Directory.Name;
+                s.Key = serverInfoFile.Directory.Name;
                 s.Name = sInfo.Name;
                 s.Description = sInfo.Description;
                 s.TargetMajorVersion = sInfo.MajorVersion.GetValueOrDefault(17);

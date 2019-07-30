@@ -1,4 +1,4 @@
-﻿using Factorio.Persistence;
+﻿using Factorio.Persistence.Interfaces;
 using Factorio.Persistence.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;

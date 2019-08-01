@@ -1,16 +1,17 @@
-﻿using Factorio.Persistence.Interfaces;
-using Factorio.Persistence.Models;
+﻿using Factorio.Models;
+using Factorio.Persistence.Utils;
+using Factorio.Services.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using Slugify;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 //https://hub.docker.com/v2/repositories/factoriotools/factorio/tags/
 // TODO - concurrency
-namespace Factorio.Persistence
+namespace Factorio.Services.Persistence.LocalInstanceProvider
 {
     public class LocalInstanceProvider : IInstanceProvider
     {
@@ -18,6 +19,8 @@ namespace Factorio.Persistence
         private const string SERVER_INFO_FILE_NAME = "server-info.json";
         private const string CONFIG_SECTION_NAME = "LocalPersistenceProvider";
         private const string CONFIG_BASE_DIR_VALUE_NAME = "BaseDirectory";
+
+        private Regex MOD_ZIP_REGEX = new Regex(@"(.*)_(\d+)\.(\d+)\.(\d+)\.zip");
 
         // Static Config
         private DirectoryInfo _baseDirectory;
@@ -45,7 +48,7 @@ namespace Factorio.Persistence
             return _baseDirectory.Exists;
         }
 
-        public IEnumerable<IInstance> GetAll()
+        public IEnumerable<GameInstance> GetAll()
         {
             if (_baseDirectory.Exists)
             {
@@ -53,11 +56,11 @@ namespace Factorio.Persistence
             }
             else
             {
-                return new Instance[0];
+                return new GameInstance[0];
             }
         }
 
-        public IInstance GetById(string slug)
+        public GameInstance GetById(string slug)
         {
             DirectoryInfo d = GetServerDirectory(slug);
 
@@ -77,7 +80,7 @@ namespace Factorio.Persistence
             return d.Exists;
         }
 
-        public bool TryAddServer(IInstance newServer, out string newId)
+        public bool TryAddServer(GameInstance newServer, out string newId)
         {
             newId = _slug.GenerateSlug(newServer.Name);
 
@@ -98,7 +101,8 @@ namespace Factorio.Persistence
                     Name = newServer.Name,
                     Description = newServer.Description,
                     MajorVersion = newServer.TargetMajorVersion,
-                    MinorVersion = newServer.TargetMinorVersion
+                    MinorVersion = newServer.TargetMinorVersion,
+                    PatchVersion = newServer.TargetPatchVersion
                 };
                 w.Write(JsonConvert.SerializeObject(sInfo));
             }
@@ -106,7 +110,7 @@ namespace Factorio.Persistence
             return true;
         }
 
-        public void UpdateServer(string slug, IInstance value)
+        public void UpdateServer(string slug, GameInstance value)
         {
             // TODO - write to file system and update environments
             DirectoryInfo d = GetServerDirectory(slug);
@@ -136,23 +140,56 @@ namespace Factorio.Persistence
         }
 
         #region Loading Servers
-        private Instance LoadSingleDirectory(DirectoryInfo d)
+        private GameInstance LoadSingleDirectory(DirectoryInfo d)
         {
-            Instance ret = LoadEmptyServer(d);
+            string localPath = d.FullName;
+
+            GameSave lastSave = LoadActiveSave(d);
+            IList<Mod> modList = LoadModList(d);
+
+
+            GameInstance ret;
 
             FileInfo gameInfo = GetServerInfo(d);
             if (gameInfo != null)
             {
-                LoadServerFieldsFromJSON(gameInfo, ret);
+                ret = LoadServerFieldsFromJSON(gameInfo);
+            }
+            else
+            {
+                ret = LoadEmptyServer(d);
             }
 
-            FileInfo gameSave = GetActiveGameSave(d);
-            if (gameSave != null)
-            {
-                ret.LastSave = Utils.SaveFolderParser.ParserZipFile(gameSave);
-            }
+            ret.LastSave = lastSave;
+            ret.Mods = modList;
 
             return ret;
+        }
+
+        private IList<Mod> LoadModList(DirectoryInfo d)
+        {
+            List<Mod> ret = new List<Mod>();
+
+            DirectoryInfo modsDir = d.EnumerateDirectories("mods").FirstOrDefault();
+            if (modsDir == null) return new List<Mod>();
+            return new List<Mod>(modsDir.EnumerateFiles("*.zip").Select<FileInfo, Mod>(modZip =>
+          {
+              Match regexMathc = MOD_ZIP_REGEX.Match(modZip.Name);
+              string modName = regexMathc.Groups[1].Value;
+              string majorVersion = regexMathc.Groups[2].Value;
+              string minorVersion = regexMathc.Groups[3].Value;
+              string patchVersion = regexMathc.Groups[4].Value;
+
+              return new Mod(modName, new byte[] { byte.Parse(majorVersion), byte.Parse(minorVersion), byte.Parse(patchVersion) });
+          }));
+        }
+
+        private GameSave LoadActiveSave(DirectoryInfo d)
+        {
+            FileInfo gameSaveFile = GetActiveGameSave(d);
+            if (gameSaveFile == null) return null;
+
+            return SaveFolderParser.ParserZipFile(gameSaveFile);
         }
 
         /// <summary>
@@ -193,14 +230,14 @@ namespace Factorio.Persistence
         /// </summary>
         /// <param name="serverFolder">The game folder</param>
         /// <returns>A partial Server object</returns>
-        private Instance LoadEmptyServer(DirectoryInfo serverFolder)
+        private GameInstance LoadEmptyServer(DirectoryInfo serverFolder)
         {
-            return new Instance()
+            return new GameInstance()
             {
                 Key = serverFolder.Name,
                 Name = serverFolder.Name,
                 Description = "",
-                LocalPath = serverFolder.FullName
+                ImplementationInfo = new Dictionary<string, string> { { "localPath", serverFolder.FullName } }
             };
         }
 
@@ -209,7 +246,7 @@ namespace Factorio.Persistence
         /// </summary>
         /// <param name="file">The server-info.json file</param>
         /// <param name="s">The output server object</param>
-        private void LoadServerFieldsFromJSON(FileInfo serverInfoFile, Instance s)
+        private GameInstance LoadServerFieldsFromJSON(FileInfo serverInfoFile)
         {
 
             ServerInfoFile sInfo = null;
@@ -217,17 +254,20 @@ namespace Factorio.Persistence
             {
                 sInfo = JsonConvert.DeserializeObject<ServerInfoFile>(r.ReadToEnd());
             }
-            if (sInfo != null)
+            if (sInfo == null)
             {
-                s.Key = serverInfoFile.Directory.Name;
-                s.Name = sInfo.Name;
-                s.Description = sInfo.Description;
-                s.TargetMajorVersion = sInfo.MajorVersion.GetValueOrDefault(0);
-                s.TargetMinorVersion = sInfo.MinorVersion.GetValueOrDefault(17);
-                s.TargetPatchVersion = sInfo.PatchVersion;
-                // TODO
-                
+                return null; // TODO
             }
+            return new GameInstance
+            {
+                Key = serverInfoFile.Directory.Name,
+                Name = sInfo.Name,
+                Description = sInfo.Description,
+                TargetMajorVersion = sInfo.MajorVersion.GetValueOrDefault(0),
+                TargetMinorVersion = sInfo.MinorVersion.GetValueOrDefault(17),
+                TargetPatchVersion = sInfo.PatchVersion,
+                ImplementationInfo = new Dictionary<string, string> { { "localPath", serverInfoFile.Directory.FullName } }
+            };
         }
         #endregion
 
@@ -245,6 +285,7 @@ namespace Factorio.Persistence
         {
             public List<ModEntry> Mods;
         }
+
         private class ModEntry
         {
             public string Name;

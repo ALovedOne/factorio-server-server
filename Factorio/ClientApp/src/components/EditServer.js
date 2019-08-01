@@ -13,7 +13,7 @@ export class EditServer extends Component {
         if (id) {
             this.state = { id: id, loading: true, done: false };
 
-            fetch(`api/server/${id}`)
+            fetch(`api/instance/${id}`)
                 .then(response => response.json())
                 .then(data => {
                     this.setState({ id: this.state.id, server: data, loading: false })
@@ -31,7 +31,7 @@ export class EditServer extends Component {
         const id = this.state.id;
         const server = this.state.server;
 
-        const url = id ? `api/server/${id}` : `api/server`;
+        const url = id ? `api/instance/${id}` : `api/instance`;
         const method = id ? 'PUT' : 'POST';
 
 

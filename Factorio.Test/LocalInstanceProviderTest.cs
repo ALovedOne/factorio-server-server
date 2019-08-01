@@ -1,11 +1,9 @@
+using Factorio.Models;
 using Factorio.Persistence;
-using Factorio.Persistence.Interfaces;
-using Factorio.Persistence.Models;
+using Factorio.Services.Interfaces;
+using Factorio.Services.Persistence.LocalInstanceProvider;
 using Microsoft.Extensions.Configuration;
-using System;
 using System.Collections.Generic;
-using System.IO;
-using System.IO.Compression;
 using Xunit;
 
 namespace Factorio.Test
@@ -32,7 +30,7 @@ namespace Factorio.Test
             this.AddTestSave("save_17_50");
             this.AddBlankDir("blank_dir");
 
-            List<IInstance> all = new List<IInstance>(this._instanceProvider.GetAll());
+            List<GameInstance> all = new List<GameInstance>(this._instanceProvider.GetAll());
 
             Assert.Equal(3, all.Count);
         }
@@ -43,7 +41,7 @@ namespace Factorio.Test
             this.AddTestSave("save_15_40");
             this.AddTestSave("save_17_50");
 
-            Instance testInstance = this._instanceProvider.GetById("save_17_50") as Instance;
+            GameInstance testInstance = this._instanceProvider.GetById("save_17_50");
             Assert.NotNull(testInstance);
             Assert.Equal("save_17_50", testInstance.Key);
             Assert.Equal(17, testInstance.LastSave.MinorVersion);
@@ -63,7 +61,7 @@ namespace Factorio.Test
         {
             this.AddBlankDir("existing-dir");
 
-            Assert.False(this._instanceProvider.TryAddServer(new Instance
+            Assert.False(this._instanceProvider.TryAddServer(new GameInstance
             {
                 Name = "Existing Dir"
             }, out string newId));
@@ -75,20 +73,24 @@ namespace Factorio.Test
         public void TestTryAddServerSuccessfully()
         {
             this.AddBlankDir("existing_dir");
-            Assert.True(this._instanceProvider.TryAddServer(new Instance
+            Assert.True(this._instanceProvider.TryAddServer(new GameInstance
             {
                 Description = "New Description",
                 Name = "New Dir",
-                TargetMajorVersion = 17,
-                TargetMinorVersion = 20
+                TargetMajorVersion = 0,
+                TargetMinorVersion = 17,
+                TargetPatchVersion = 20
             }, out string newId));
             Assert.Equal("new-dir", newId);
 
-            Instance newServer = this._instanceProvider.GetById(newId) as Instance;
+            GameInstance newServer = this._instanceProvider.GetById(newId);
             Assert.Equal("New Description", newServer.Description);
             Assert.Equal("New Dir", newServer.Name);
+            Assert.Equal(0, newServer.TargetMajorVersion);
             Assert.Equal(17, newServer.TargetMinorVersion);
             Assert.Equal(20, newServer.TargetPatchVersion);
+            // TODO
+            // Assert.Equal(Path.Combine(this.FullPath, "new-dir"), newServer.LocalPath);
         }
 
         [Fact]
@@ -98,8 +100,8 @@ namespace Factorio.Test
             const string newServerDescription = "New Server Description";
             this.AddTestSave("save_17_50");
 
-            this._instanceProvider.UpdateServer("save_17_50", new Instance { Name = newServerName, Description = newServerDescription });
-            Instance testInstance = this._instanceProvider.GetById("save_17_50") as Instance;
+            this._instanceProvider.UpdateServer("save_17_50", new GameInstance { Name = newServerName, Description = newServerDescription });
+            GameInstance testInstance = this._instanceProvider.GetById("save_17_50");
 
             Assert.Equal(newServerName, testInstance.Name);
             Assert.Equal(newServerDescription, testInstance.Description);
@@ -110,10 +112,10 @@ namespace Factorio.Test
         {
             this.AddTestSave("save_17_50");
 
-            List<IInstance> all = new List<IInstance>(this._instanceProvider.GetAll());
+            List<GameInstance> all = new List<GameInstance>(this._instanceProvider.GetAll());
             Assert.Single(all);
 
-            IInstance testInstance = all[0];
+            GameInstance testInstance = all[0];
             Assert.Equal(0, testInstance.LastSave.MajorVersion);
             Assert.Equal(17, testInstance.LastSave.MinorVersion);
             Assert.Equal(50, testInstance.LastSave.PatchVersion);
@@ -124,7 +126,7 @@ namespace Factorio.Test
         {
             this.AddBlankDir("blank_dir");
 
-            List<IInstance> all = new List<IInstance>(this._instanceProvider.GetAll());
+            List<GameInstance> all = new List<GameInstance>(this._instanceProvider.GetAll());
             Assert.Single(all);
         }
     }

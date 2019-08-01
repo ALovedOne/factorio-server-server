@@ -1,16 +1,14 @@
 ﻿using Docker.DotNet;
 using Docker.DotNet.Models;
-using Factorio.Persistence.Models;
+using Factorio.Models;
+using Factorio.Services.Interfaces;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using System.Data;
 using System.Linq;
-using Factorio.Persistence.Interfaces;
-using Factorio.Execution.Interfaces;
+using System.Threading.Tasks;
 
-namespace Factorio.Execution
+namespace Factorio.Services.Execution.DockerImplementation
 {
     public class DockerRunnerService : IRunnerService
     {
@@ -34,19 +32,12 @@ namespace Factorio.Execution
             this._dockerClient = new DockerClientConfiguration(new Uri(dockerConnectionUri)).CreateClient();
         }
 
-        public async Task<IEnumerable<IRunningInstance>> GetRunningInstancesAsync()
+        public async Task<IEnumerable<RunningInstance>> GetRunningInstancesAsync()
         {
-
             IEnumerable<ContainerListResponse> runningInstances = await this._dockerClient.Containers.ListContainersAsync(new ContainersListParameters
             {
 
-                Filters = new Dictionary<string, IDictionary<string, bool>>
-                {
-                    {"label", new Dictionary<string, bool>
-                    {
-                        {DOCKER_LABEL_KEY, true }
-                    } }
-                }
+                Filters = new Dictionary<string, IDictionary<string, bool>> { { "label", new Dictionary<string, bool> { { DOCKER_LABEL_KEY, true } } } }
             });
 
             Dictionary<string, string> versionMap = new Dictionary<string, string>();
@@ -58,33 +49,31 @@ namespace Factorio.Execution
 
             return runningInstances.Select(containerInfo =>
             {
-                return new DockerRunningInstance
+                return new RunningInstance
                 {
-                    ContainerID = containerInfo.ID,
+                    Key = containerInfo.ID,
                     Hostname = "localhost",
                     Port = containerInfo.Ports.First(p => p.PrivatePort == 34197).PublicPort,
-                    Version = versionMap[containerInfo.ImageID],
+                    RunningVersion = versionMap[containerInfo.ImageID],
                     InstanceKey = containerInfo.Labels[DOCKER_LABEL_KEY]
                 };
             });
         }
 
-        public async Task<IRunningInstance> StartInstanceAsync(string host, int port, IInstance instance)
+        public async Task<RunningInstance> StartInstanceAsync(string host, int port, GameInstance instance)
         {
-            Instance localInstance = instance as Instance;
-
             await this.LoadImageAsync(instance);
-            string newID = await this.StartImageAsync(instance, port, localInstance.LocalPath);
+            // TODO - handle invliad info
+            string newID = await this.StartImageAsync(instance, port, instance.ImplementationInfo.GetValueOrDefault("localPath", ""));
 
-            DockerRunningInstance i = new DockerRunningInstance
+            RunningInstance i = new RunningInstance
             {
+                Key = newID,
                 Hostname = host,
                 Port = port,
 
-                Version = FormatVersion(instance),
+                RunningVersion = FormatVersion(instance),
                 InstanceKey = instance.Key,
-
-                ContainerID = newID,
             };
             return i;
         }
@@ -138,7 +127,7 @@ namespace Factorio.Execution
             });
         }
 
-        private async Task LoadImageAsync(IInstance instance)
+        private async Task LoadImageAsync(GameInstance instance)
         {
 
             await this._dockerClient.Images.CreateImageAsync(new ImagesCreateParameters
@@ -149,7 +138,7 @@ namespace Factorio.Execution
 
         }
 
-        private async Task<string> StartImageAsync(IInstance instance, int port, string sourcePath)
+        private async Task<string> StartImageAsync(GameInstance instance, int port, string sourcePath)
         {
             CreateContainerResponse newContainer = null;
             try
@@ -190,7 +179,7 @@ namespace Factorio.Execution
             return newContainer.ID;
         }
 
-        private string FormatVersion(IInstance instance)
+        private string FormatVersion(GameInstance instance)
         {
             string version = string.Format("{0}.{1}", instance.TargetMajorVersion, instance.TargetMinorVersion);
             if (instance.TargetPatchVersion != null)

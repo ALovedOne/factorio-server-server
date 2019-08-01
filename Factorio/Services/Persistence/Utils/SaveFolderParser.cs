@@ -1,10 +1,8 @@
-﻿using Factorio.Persistence.Models;
-using System;
+﻿using Factorio.Models;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace Factorio.Persistence.Utils
 {
@@ -22,13 +20,13 @@ namespace Factorio.Persistence.Utils
 
                 using (BinaryReader r = new BinaryReader(mapDATfile.Open()))
                 {
-                    // Map version = 0.<major>.<minor>-<subversion>
+                    // Map version = <major>.<minor>.<patch>-<subversion>
                     majorVersion = r.ReadInt16(); 
                     minorVersion = r.ReadInt16();
                     patchVersion = r.ReadInt16();
                     r.ReadInt16(); // Subversion
 
-                    if (majorVersion == 17)
+                    if (minorVersion == 17)
                     {
                         r.ReadInt16(); // Unknown 2 bytes, difficulty?
                         r.ReadString();

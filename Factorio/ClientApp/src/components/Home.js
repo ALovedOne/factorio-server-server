@@ -10,7 +10,7 @@ export class Home extends Component {
 
         this.state = { servers: [], loading: true, addNew: false };
 
-        fetch('api/server')
+        fetch('api/instance')
             .then(response => response.json())
             .then(data => {
                 this.setState({ servers: data, loading: false })
@@ -29,7 +29,6 @@ export class Home extends Component {
                         <th>Name</th>
                         <th>Port</th>
                         <th>Version</th>
-                        <th>Last Save</th>
                         <th>Description</th>
                         <th></th>
                     </tr>
@@ -40,7 +39,6 @@ export class Home extends Component {
                             <td>{s.name}</td>
                             <td>{s.port}</td>
                             <td>{s.targetMajorVersion}.{s.targetMinorVersion ? s.targetMinorVersion : 'x'}</td>
-                            <td>{s.lastSaveMajorVersion ? `${s.lastSaveMajorVersion}.${s.lastSaveMinorVersion}` : ''}</td>
                             <td>{s.description}</td>
                             <td>
                                 <Link to={`edit/${s.slug}`}>Edit</Link>

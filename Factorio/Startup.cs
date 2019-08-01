@@ -1,7 +1,6 @@
-using Factorio.Execution;
-using Factorio.Execution.Interfaces;
-using Factorio.Persistence;
-using Factorio.Persistence.Interfaces;
+using Factorio.Services.Execution.DockerImplementation;
+using Factorio.Services.Interfaces;
+using Factorio.Services.Persistence.LocalInstanceProvider;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;

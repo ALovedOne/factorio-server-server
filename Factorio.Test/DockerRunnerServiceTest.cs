@@ -1,12 +1,10 @@
 ﻿using Docker.DotNet;
 using Docker.DotNet.Models;
-using Factorio.Execution;
-using Factorio.Execution.Interfaces;
-using Factorio.Persistence.Models;
+using Factorio.Models;
+using Factorio.Services.Execution.DockerImplementation;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -40,12 +38,12 @@ namespace Factorio.Test
         [Fact]
         public async Task TestStartInstanceAsync()
         {
-            Instance i = this.AddBlankDir("blank-dir");
+            GameInstance i = this.AddBlankDir("blank-dir");
 
-            IRunningInstance x = await this._service.StartInstanceAsync("localhost", 9999, i);
-            DockerRunningInstance dockerInst = x as DockerRunningInstance;
+            RunningInstance x = await this._service.StartInstanceAsync("localhost", 9999, i);
+            RunningInstance dockerInst = x as RunningInstance;
 
-            ContainerInspectResponse containerInfo = await this._dockerClient.Containers.InspectContainerAsync(dockerInst.ContainerID);
+            ContainerInspectResponse containerInfo = await this._dockerClient.Containers.InspectContainerAsync(dockerInst.Key);
             Assert.Equal("factoriotools/factorio:0.17", containerInfo.Config.Image);
 
             IList<PortBinding> udpPorts = containerInfo.NetworkSettings.Ports["34197/udp"];
@@ -61,12 +59,11 @@ namespace Factorio.Test
         [Fact]
         public async Task TestStartInstance2Async()
         {
-            Instance i = this.AddBlankDir("blank-dir", 54);
+            GameInstance i = this.AddBlankDir("blank-dir", 54);
 
-            IRunningInstance x = await this._service.StartInstanceAsync("localhost", 9999, i);
-            DockerRunningInstance dockerInst = x as DockerRunningInstance;
+            RunningInstance dockerInst = await this._service.StartInstanceAsync("localhost", 9999, i);
 
-            ContainerInspectResponse containerInfo = await this._dockerClient.Containers.InspectContainerAsync(dockerInst.ContainerID);
+            ContainerInspectResponse containerInfo = await this._dockerClient.Containers.InspectContainerAsync(dockerInst.Key);
             Assert.Equal("factoriotools/factorio:0.17.54", containerInfo.Config.Image);
 
             IList<PortBinding> udpPorts = containerInfo.NetworkSettings.Ports["34197/udp"];
@@ -88,13 +85,13 @@ namespace Factorio.Test
         [Fact]
         public async Task TestGetRunningInstancesAsync()
         {
-            Instance i1 = this.AddTestSave("save_15_40");
-            Instance i2 = this.AddTestSave("save_17_50");
+            GameInstance i1 = this.AddTestSave("save_15_40");
+            GameInstance i2 = this.AddTestSave("save_17_50");
 
             await this._service.StartInstanceAsync("localhost", 9999, i1);
             await this._service.StartInstanceAsync("localhost", 9998, i2);
 
-            IList<IRunningInstance> runningInstances = new List<IRunningInstance>(await this._service.GetRunningInstancesAsync());
+            IList<RunningInstance> runningInstances = new List<RunningInstance>(await this._service.GetRunningInstancesAsync());
 
             Assert.Equal(2, runningInstances.Count);
         }

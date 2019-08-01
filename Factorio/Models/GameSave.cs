@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Factorio.Persistence.Models
+namespace Factorio.Models
 {
     public class GameSave
     {

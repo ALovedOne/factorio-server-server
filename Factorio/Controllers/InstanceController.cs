@@ -1,5 +1,5 @@
-﻿using Factorio.Persistence.Interfaces;
-using Factorio.Persistence.Models;
+﻿using Factorio.Models;
+using Factorio.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 
@@ -7,24 +7,24 @@ namespace Factorio.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ServerController : ControllerBase
+    public class InstanceController : ControllerBase
     {
         private IInstanceProvider _servers;
 
-        public ServerController(IInstanceProvider servers)
+        public InstanceController(IInstanceProvider servers)
         {
             _servers = servers;
         }
 
         // GET: api/Server
         [HttpGet]
-        public IEnumerable<IInstance> Get()
+        public IEnumerable<GameInstance> Get()
         {
             return _servers.GetAll();
         }
 
         // GET: api/Server/5
-        [HttpGet("{slug}", Name = "Get")]
+        [HttpGet("{slug}")]
         public IActionResult Get(string slug)
         {
             if (_servers.IdExists(slug))
@@ -39,7 +39,7 @@ namespace Factorio.Controllers
 
         // POST: api/Server
         [HttpPost]
-        public IActionResult Post([FromBody] Instance value)
+        public IActionResult Post([FromBody] GameInstance value)
         {
             if (_servers.TryAddServer(value, out string newId))
             {
@@ -53,7 +53,7 @@ namespace Factorio.Controllers
 
         // PUT: api/Server/5
         [HttpPut("{slug}")]
-        public void Put(string slug, [FromBody] Instance value)
+        public void Put(string slug, [FromBody] GameInstance value)
         {
             _servers.UpdateServer(slug, value);
         }

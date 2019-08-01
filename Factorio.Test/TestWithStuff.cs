@@ -1,9 +1,8 @@
-﻿using Factorio.Persistence.Models;
+﻿using Factorio.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.Text;
 
 namespace Factorio.Test
 {
@@ -29,7 +28,7 @@ namespace Factorio.Test
 
         protected string FullPath { get { return this._testDir.FullName; } }
 
-        protected Instance AddTestSave(string saveFile)
+        protected GameInstance AddTestSave(string saveFile)
         {
             string pathAssembly = System.Reflection.Assembly.GetExecutingAssembly().Location;
             string folderAssembly = Path.GetDirectoryName(pathAssembly);
@@ -37,24 +36,24 @@ namespace Factorio.Test
             string zipFileName = Path.Combine(folderAssembly, "TestData", saveFile + ".zip");
             ZipFile.ExtractToDirectory(zipFileName, this._testDir.FullName);
 
-            return new Instance
+            return new GameInstance
             {
                 Key = "test-server-" + saveFile,
-                LocalPath = Path.Combine(this._testDir.FullName, saveFile),
-               
+                ImplementationInfo = new Dictionary<string, string> { { "localPath", Path.Combine(this._testDir.FullName, saveFile) } },
+
                 TargetMajorVersion = 0,
                 TargetMinorVersion = 17,
                 TargetPatchVersion = 20
             };
         }
 
-        protected Instance AddBlankDir(string dirName, int? PatchVersion = null)
+        protected GameInstance AddBlankDir(string dirName, int? PatchVersion = null)
         {
             DirectoryInfo d = this._testDir.CreateSubdirectory(dirName);
-            return new Instance
+            return new GameInstance
             {
                 Key = "test-server-" + dirName,
-                LocalPath = d.FullName,
+                ImplementationInfo = new Dictionary<string, string> { { "localPath", d.FullName } },
                 TargetMajorVersion = 0,
                 TargetMinorVersion = 17,
                 TargetPatchVersion = PatchVersion

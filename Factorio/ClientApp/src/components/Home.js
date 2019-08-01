@@ -1,6 +1,16 @@
 import React, { Component } from 'react';
-import { BrowserRouter as Router, Route, Link, Redirect } from "react-router-dom";
 import Button from 'react-bootstrap/Button';
+import Card from 'react-bootstrap/Card';
+import CardColumns from 'react-bootstrap/CardColumns';
+import MdEdit from 'react-icons/lib/md/edit';
+import MdPlay from 'react-icons/lib/md/play-arrow';
+import MdStop from 'react-icons/lib/md/stop';
+import MdSync from 'react-icons/lib/md/sync';
+import { Link, Redirect } from "react-router-dom";
+import PlaceHolderImage from '../assets/spagetti-rocket.jpg';
+import Row from 'react-bootstrap/Row'
+import Col from 'react-bootstrap/Col'
+
 
 export class Home extends Component {
     static displayName = Home.name;
@@ -13,7 +23,12 @@ export class Home extends Component {
         fetch('api/instances')
             .then(response => response.json())
             .then(data => {
-                this.setState({ servers: data, loading: false })
+                this.setState({ servers: data, loading: false });
+            });
+        fetch('api/executions')
+            .then(response => response.json())
+            .then(data => {
+                this.setState({ executions: data, loadingExecutions: false });
             });
     }
 
@@ -23,30 +38,29 @@ export class Home extends Component {
 
     static renderServersTable(servers) {
         return (
-            <table className='table table-striped'>
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Port</th>
-                        <th>Version</th>
-                        <th>Description</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {servers.map(s =>
-                        <tr key={s.slug}>
-                            <td>{s.name}</td>
-                            <td>{s.port}</td>
-                            <td>{s.targetMajorVersion}.{s.targetMinorVersion ? s.targetMinorVersion : 'x'}</td>
-                            <td>{s.description}</td>
-                            <td>
-                                <Link to={`edit/${s.slug}`}>Edit</Link>
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
+            <CardColumns>
+                {
+                    servers.map(s =>
+                        <Card style={{ width: '20rem' }} key={s.key}>
+                            <Card.Img variant="top" src={PlaceHolderImage} />
+                            <Card.Body>
+                                <Card.Title>{s.name}</Card.Title>
+                                <Card.Subtitle>0.17.x</Card.Subtitle>
+                                <Card.Text>{s.description}</Card.Text>
+                                Connection Info
+                            </Card.Body>
+                            <Card.Footer>
+                                <Row>
+                                    <MdPlay size={26} />
+                                    <MdStop size={26} />
+                                    <Link to={`edit/${s.key}`}><MdEdit size={24} /></Link>
+                                    <MdSync size={26} />
+                                </Row>
+                            </Card.Footer>
+                        </Card>
+                    )
+                }
+            </CardColumns>
         );
     }
 

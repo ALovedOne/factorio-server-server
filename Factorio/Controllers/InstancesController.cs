@@ -7,11 +7,11 @@ namespace Factorio.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class InstanceController : ControllerBase
+    public class InstancesController : ControllerBase
     {
         private IInstanceProvider _servers;
 
-        public InstanceController(IInstanceProvider servers)
+        public InstancesController(IInstanceProvider servers)
         {
             _servers = servers;
         }

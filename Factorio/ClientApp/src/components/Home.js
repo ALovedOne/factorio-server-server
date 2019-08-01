@@ -10,7 +10,7 @@ export class Home extends Component {
 
         this.state = { servers: [], loading: true, addNew: false };
 
-        fetch('api/instance')
+        fetch('api/instances')
             .then(response => response.json())
             .then(data => {
                 this.setState({ servers: data, loading: false })

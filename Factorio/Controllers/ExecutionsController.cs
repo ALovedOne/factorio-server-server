@@ -9,12 +9,12 @@ namespace Factorio.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ExecutionController : ControllerBase
+    public class ExecutionsController : ControllerBase
     {
         private readonly IInstanceProvider _instances;
         private readonly IRunnerService _runner;
 
-        public ExecutionController(IRunnerService runner, IInstanceProvider instanceService)
+        public ExecutionsController(IRunnerService runner, IInstanceProvider instanceService)
         {
             this._runner = runner;
         }

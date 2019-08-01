@@ -18,22 +18,13 @@ export class Home extends Component {
     constructor(props) {
         super(props);
 
-        this.state = { servers: [], loading: true, addNew: false };
+        this.state = { servers: [], loading: true };
 
         fetch('api/instances')
             .then(response => response.json())
             .then(data => {
                 this.setState({ servers: data, loading: false });
             });
-        fetch('api/executions')
-            .then(response => response.json())
-            .then(data => {
-                this.setState({ executions: data, loadingExecutions: false });
-            });
-    }
-
-    addServer() {
-        this.setState({ "addNew": true });
     }
 
     static renderServersTable(servers) {
@@ -51,10 +42,13 @@ export class Home extends Component {
                             </Card.Body>
                             <Card.Footer>
                                 <Row>
-                                    <MdPlay size={26} />
-                                    <MdStop size={26} />
-                                    <Link to={`edit/${s.key}`}><MdEdit size={24} /></Link>
-                                    <MdSync size={26} />
+                                    <Col>Col 1</Col>
+                                    <Col>
+                                        <Button variant="link"> <MdPlay size={24} /></Button>
+                                        <Button variant="link"><MdStop size={24} /></Button>
+                                        <Button variant="link"><MdSync size={24} /></Button>
+                                        <Link to={`edit/${s.key}`}><Button variant="link"> <MdEdit size={24} /></Button></Link>
+                                    </Col>
                                 </Row>
                             </Card.Footer>
                         </Card>
@@ -65,11 +59,6 @@ export class Home extends Component {
     }
 
     render() {
-        if (this.state.addNew) {
-            return (
-                <Redirect to="/new" />
-            )
-        }
         let contents = this.state.loading
             ? <p><em>Loading...</em></p>
             : Home.renderServersTable(this.state.servers);
@@ -77,9 +66,7 @@ export class Home extends Component {
         return (
             <div>
                 {contents}
-                <Button onClick={() => this.addServer()} >
-                    Add
-                    </Button>
+                <Link to="/new"><Button >Add</Button></Link>
             </div>
         );
     }

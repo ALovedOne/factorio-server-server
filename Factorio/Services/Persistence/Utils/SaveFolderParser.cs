@@ -12,6 +12,7 @@ namespace Factorio.Persistence.Utils
         {
             int majorVersion, minorVersion, patchVersion;
             List<Mod> modList = new List<Mod>();
+            string previewImage = null;
 
             using (ZipArchive zip = ZipFile.OpenRead(fileName.FullName))
             {
@@ -21,7 +22,7 @@ namespace Factorio.Persistence.Utils
                 using (BinaryReader r = new BinaryReader(mapDATfile.Open()))
                 {
                     // Map version = <major>.<minor>.<patch>-<subversion>
-                    majorVersion = r.ReadInt16(); 
+                    majorVersion = r.ReadInt16();
                     minorVersion = r.ReadInt16();
                     patchVersion = r.ReadInt16();
                     r.ReadInt16(); // Subversion
@@ -44,7 +45,7 @@ namespace Factorio.Persistence.Utils
                 }
             }
 
-            return new GameSave(majorVersion, minorVersion,patchVersion, modList);
+            return new GameSave(majorVersion, minorVersion, patchVersion, modList);
         }
 
         private static Mod ReadMod17(BinaryReader r)

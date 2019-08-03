@@ -47,7 +47,7 @@ namespace Factorio.Services.Execution.DockerImplementation
         /// </summary>
         /// <param name="key"></param>
         /// <returns></returns>
-        public async Task<RunningInstance> GetByInstanceKeyAsync(string key)
+        public async Task<RunningInstance> GetByRunningInstanceKeyAsync(string key)
         {
             IList<RunningInstance> instances = await GetRunningInstancesFromDockerAsync(key);
 
@@ -95,7 +95,7 @@ namespace Factorio.Services.Execution.DockerImplementation
             IList<RunningInstance> instances = await GetRunningInstancesFromDockerAsync(key, port);
 
             if (instances == null) return null;
-            if (instances.Count > 0) return null; // TODO - handle multiple
+            if (instances.Count > 1) return null; // TODO - handle multiple
             return instances[0].Key;
         }
 
@@ -120,6 +120,13 @@ namespace Factorio.Services.Execution.DockerImplementation
 
         }
 
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <param name="instance"></param>
+        /// <param name="port"></param>
+        /// <param name="sourcePath"></param>
+        /// <returns></returns>
         private async Task<string> StartImageAsync(GameInstance instance, int port, string sourcePath)
         {
             CreateContainerResponse newContainer = null;
@@ -161,6 +168,12 @@ namespace Factorio.Services.Execution.DockerImplementation
             return newContainer.ID;
         }
 
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <param name="instanceKey"></param>
+        /// <param name="port"></param>
+        /// <returns></returns>
         private async Task<IList<RunningInstance>> GetRunningInstancesFromDockerAsync(string instanceKey = null, int? port = null)
         {
             IDictionary<string, IDictionary<string, bool>> filters = new Dictionary<string, IDictionary<string, bool>>
@@ -169,29 +182,55 @@ namespace Factorio.Services.Execution.DockerImplementation
             if (port != null) filters.Add("publish", new Dictionary<string, bool> { { string.Format("{0}", port), true } });
 
             IEnumerable<ContainerListResponse> runningInstances = await this._dockerClient.Containers.ListContainersAsync(new ContainersListParameters { Filters = filters, All = true });
+            await LoadImageInfo(runningInstances);
 
-            Dictionary<string, string> versionMap = new Dictionary<string, string>();
-            foreach (ContainerListResponse containerInfo in runningInstances)
-            {
-                string version = await this.GetImageVersionAsync(containerInfo.ImageID);
-                versionMap.TryAdd(containerInfo.ImageID, version);
-            }
-
-            return new List<RunningInstance>(runningInstances.Select(containerInfo =>
-           {
-               var exposedPort = containerInfo.Ports.FirstOrDefault(p => p.PrivatePort == 34197);
-
-               return new RunningInstance
-               {
-                   Key = containerInfo.ID,
-                   Hostname = "localhost",
-                   Port = exposedPort != null ? exposedPort.PublicPort : 0,
-                   RunningVersion = versionMap[containerInfo.ImageID],
-                   InstanceKey = containerInfo.Labels[DOCKER_LABEL_KEY]
-               };
-           }));
+            return new List<RunningInstance>(runningInstances.Select(containerInfo => MapDockerContainer(containerInfo)));
         }
 
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <param name="responses"></param>
+        /// <returns></returns>
+        private async Task LoadImageInfo(IEnumerable<ContainerListResponse> responses)
+        {
+            Task[] tasks = responses.Select(async r =>
+            {
+                if (!_imageVersionMap.ContainsKey(r.ImageID))
+                {
+                    string version = await GetImageVersionAsync(r.ImageID);
+                    _imageVersionMap.Add(r.ImageID, version);
+                }
+            }).ToArray();
+
+            await Task.WhenAll(tasks);
+        }
+
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <param name="containerInfo"></param>
+        /// <returns></returns>
+        private RunningInstance MapDockerContainer(ContainerListResponse containerInfo)
+        {
+            Port exposedPort = containerInfo.Ports.FirstOrDefault(p => p.PrivatePort == 34197);
+            string runningVersion = _imageVersionMap[containerInfo.ImageID];
+
+            return new RunningInstance
+            {
+                Key = containerInfo.ID,
+                Hostname = "localhost",
+                Port = exposedPort != null ? exposedPort.PublicPort : 0,
+                RunningVersion = runningVersion,
+                InstanceKey = containerInfo.Labels[DOCKER_LABEL_KEY]
+            };
+        }
+
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <param name="instance"></param>
+        /// <returns></returns>
         private string FormatVersion(GameInstance instance)
         {
             string version = string.Format("{0}.{1}", instance.TargetMajorVersion, instance.TargetMinorVersion);
@@ -203,16 +242,24 @@ namespace Factorio.Services.Execution.DockerImplementation
             return version;
         }
 
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <param name="imageID"></param>
+        /// <returns></returns>
         private async Task<string> GetImageVersionAsync(string imageID)
         {
+
             if (this._imageVersionMap.TryGetValue(imageID, out string versionString))
             {
                 return versionString;
             }
 
             ImageInspectResponse imageInfo = await this._dockerClient.Images.InspectImageAsync(imageID);
+            string version = imageInfo.Config.Env.First(env => env.StartsWith("VERSION")).Split("=")[1];
 
-            return imageInfo.Config.Env.First(env => env.StartsWith("VERSION")).Split("=")[1];
+            this._imageVersionMap.Add(imageID, version);
+            return version;
         }
     }
 

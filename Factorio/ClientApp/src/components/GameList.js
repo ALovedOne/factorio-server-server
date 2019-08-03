@@ -20,10 +20,7 @@ function GameList(props) {
     return (
         <div>
             <CardColumns>
-                {
-                    props.games.filter(s => s.save !== undefined).map(s => <GameCard game={s} key={s.key} {...props} />)
-                }
-
+                {props.games.map(s => <GameCard game={s} key={s.key} {...props} />)}
             </CardColumns>
             <Link to="/new"><Button >Add</Button></Link>
         </div>
@@ -36,9 +33,7 @@ function GameCard(props) {
 
     var footer = (
         <Col>
-
-            <Button variant="link" onClick={() => props.onStartInstance(props.game)}><MdPlay size={24} />
-            </Button>
+            <Button variant="link" onClick={() => props.onStartInstance(props.game)}><MdPlay size={24} /></Button>
         </Col>);
 
     var targetVersion = `${save.targetMajorVersion}.${save.targetMinorVersion}.${save.targetPatchVersion ? save.targetPatchVersion : 'x'}`;

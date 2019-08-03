@@ -19,14 +19,12 @@ export class StartServer extends Component {
     handleSubmit(event) {
         event.preventDefault();
 
-        debugger;
-
         const id = this.state.id;
         const server = this.state.server;
 
 
 
-        fetch("api/executions", {
+        fetch("api/instances/" + this.state.imageKey + "/start", {
             method: "POST",
             headers: {
                 'Content-Type': 'application/json',

@@ -9,64 +9,15 @@ export class Home extends Component {
     constructor(props) {
         super(props);
 
-        this.state = { gameInstances: [], loadingGameInstances: true, loadingExecutions: true };
+        this.state = { gameInstances: [], loading: true };
 
         fetch('api/instances')
             .then(response => response.json())
             .then(data => {
                 this.setState((oldState) => {
-                    var newGameInstances = data.reduce((newGameInstances, gameInstance) => {
-                        var existingIdx = newGameInstances.findIndex((elem) => elem.key === gameInstance.key);
-
-                        if (existingIdx !== -1) {
-                            newGameInstances[existingIdx] = {
-                                key: gameInstance.key,
-                                save: gameInstance,
-                                execution: newGameInstances[existingIdx].execution
-                            }
-                        } else {
-                            newGameInstances.push({
-                                key: gameInstance.key,
-                                save: gameInstance,
-                                execution: null
-                            });
-                        }
-                        return newGameInstances;
-                    }, oldState.gameInstances.concat([]))
-
-                    return { gameInstances: newGameInstances, loadingGameInstances: false }
+                    return { gameInstances: data, loading: false }
                 });
             });
-
-        fetch('api/executions')
-            .then(response => response.json())
-            .then(data => {
-                this.setState((oldState) => {
-                    // Merge exectuions in
-                    var newGameInstances = data.reduce((newGameInstances, gameExecution) => {
-                        var existingIdx = newGameInstances.findIndex((elem) => elem.key === gameExecution.instanceKey);
-
-                        if (existingIdx !== -1) {
-                            newGameInstances[existingIdx] = {
-                                key: gameExecution.imageKey,
-                                save: newGameInstances[existingIdx].save,
-                                execution: gameExecution
-                            }
-                        } else {
-                            newGameInstances.push({
-                                key: gameExecution.instanceKey,
-                                save: null,
-                                execution: gameExecution
-                            });
-                        }
-
-                        return newGameInstances;
-                    }, newGameInstances = oldState.gameInstances.concat([]))
-
-                    return { gameInstances: newGameInstances, loadingExecutions: false }
-                });
-            });
-
     }
 
     onStartInstance(game) {
@@ -76,20 +27,34 @@ export class Home extends Component {
     }
 
     onStopInstance(game) {
-        fetch("/api/executions/" + game.key, {
-            method: "DELETE",
+        fetch("/api/instances/" + game.key + "/stop", {
+            method: "POST",
             headers: {
                 'Content-Type': 'application/json',
             }
-        })
-            .then(() => {
-                // Reload executions
-            })
-
+        }).then(resp => this.onStartStop(resp));
     }
 
     onRestartInstance(game) {
+        fetch("/api/instances/" + game.key + "/restart", {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        }).then(resp => this.onStartStop(resp));
 
+    }
+
+    onStartStop(response) {
+        response.json().then(data => {
+            this.setState((oldState) => {
+                var newRet = oldState.gameInstances.concat();
+                var idx = newRet.findIndex((a) => a.key = data.key);
+                newRet[idx] = data;
+
+                return { gameInstances: newRet, loading: false }
+            });
+        });
     }
 
     render() {
@@ -99,7 +64,7 @@ export class Home extends Component {
 
         return (
             <GameList
-                loading={this.state.loadingExecutions || this.state.loadingGameInstances}
+                loading={this.state.loading}
                 games={this.state.gameInstances}
                 onStartInstance={(game) => this.onStartInstance(game)}
                 onStopInstance={(game) => this.onStopInstance(game)}

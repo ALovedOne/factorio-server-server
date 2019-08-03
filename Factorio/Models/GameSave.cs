@@ -13,12 +13,14 @@ namespace Factorio.Models
 
         public IList<Mod> Mods { get; }
 
-        public GameSave(int MajorVersion, int MinorVersion, int PatchVersion, IList<Mod> mods)
+        public GameSave(int MajorVersion, int MinorVersion, int PatchVersion, IList<Mod> mods = null)
         {
             this.MajorVersion = MajorVersion;
             this.MinorVersion = MinorVersion;
             this.PatchVersion = PatchVersion;
-            this.Mods = mods;
+
+
+            this.Mods = mods ?? new List<Mod>();
         }
     }
 }

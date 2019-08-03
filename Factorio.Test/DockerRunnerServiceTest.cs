@@ -75,12 +75,13 @@ namespace Factorio.Test
             Assert.Equal("bind", containerInfo.Mounts[0].Type);
             //Assert.Equal(i.LocalPath, containerInfo.Mounts[0].Source); // On windows this is a weird translation
         }
-
+        /*
         [Fact]
         public async Task TestStartingMultipleWithSameIDAsync()
         {
             // TODO - should catch this case
         }
+        */
 
         [Fact]
         public async Task TestGetRunningInstancesAsync()
@@ -100,7 +101,7 @@ namespace Factorio.Test
         {
             IList<ContainerListResponse> runningContainers = await this._dockerClient.Containers.ListContainersAsync(new ContainersListParameters
             {
-
+                All = true,
                 Filters = new Dictionary<string, IDictionary<string, bool>>
                 {
                     {"label", new Dictionary<string, bool>

@@ -2,6 +2,7 @@
 using Factorio.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Factorio.Controllers
 {
@@ -9,11 +10,13 @@ namespace Factorio.Controllers
     [ApiController]
     public class InstancesController : ControllerBase
     {
-        private IInstanceProvider _servers;
+        private readonly IInstanceProvider _servers;
+        private readonly IRunnerService _runner;
 
-        public InstancesController(IInstanceProvider servers)
+        public InstancesController(IInstanceProvider servers, IRunnerService runner)
         {
             _servers = servers;
+            _runner = runner;
         }
 
         // GET: api/Server
@@ -56,6 +59,23 @@ namespace Factorio.Controllers
         public void Put(string slug, [FromBody] GameInstance value)
         {
             _servers.UpdateServer(slug, value);
+        }
+
+
+        [HttpGet("{key}/thumbnail")]
+        public string Thumbnail(string key)
+        {
+            return "Pong";
+        }
+
+        [HttpGet("{key}/restart")]
+        public async Task<IActionResult> Start(string key)
+        {
+            RunningInstance runningInstance = await this._runner.GetByInstanceKeyAsync(key);
+            if (runningInstance == null) return NotFound();
+
+
+            return BadRequest("TODO");
         }
     }
 }

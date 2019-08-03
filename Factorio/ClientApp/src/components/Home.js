@@ -1,15 +1,6 @@
 import React, { Component } from 'react';
-import Button from 'react-bootstrap/Button';
-import Card from 'react-bootstrap/Card';
-import CardColumns from 'react-bootstrap/CardColumns';
-import MdEdit from 'react-icons/lib/md/edit';
-import MdPlay from 'react-icons/lib/md/play-arrow';
-import MdStop from 'react-icons/lib/md/stop';
-import MdSync from 'react-icons/lib/md/sync';
-import { Link, Redirect } from "react-router-dom";
-import PlaceHolderImage from '../assets/spagetti-rocket.jpg';
-import Row from 'react-bootstrap/Row'
-import Col from 'react-bootstrap/Col'
+import { GameList } from './GameList';
+import { Redirect } from "react-router-dom";
 
 
 export class Home extends Component {
@@ -18,56 +9,102 @@ export class Home extends Component {
     constructor(props) {
         super(props);
 
-        this.state = { servers: [], loading: true };
+        this.state = { gameInstances: [], loadingGameInstances: true, loadingExecutions: true };
 
         fetch('api/instances')
             .then(response => response.json())
             .then(data => {
-                this.setState({ servers: data, loading: false });
+                this.setState((oldState) => {
+                    var newGameInstances = data.reduce((newGameInstances, gameInstance) => {
+                        var existingIdx = newGameInstances.findIndex((elem) => elem.key === gameInstance.key);
+
+                        if (existingIdx !== -1) {
+                            newGameInstances[existingIdx] = {
+                                key: gameInstance.key,
+                                save: gameInstance,
+                                execution: newGameInstances[existingIdx].execution
+                            }
+                        } else {
+                            newGameInstances.push({
+                                key: gameInstance.key,
+                                save: gameInstance,
+                                execution: null
+                            });
+                        }
+                        return newGameInstances;
+                    }, oldState.gameInstances.concat([]))
+
+                    return { gameInstances: newGameInstances, loadingGameInstances: false }
+                });
             });
+
+        fetch('api/executions')
+            .then(response => response.json())
+            .then(data => {
+                this.setState((oldState) => {
+                    // Merge exectuions in
+                    var newGameInstances = data.reduce((newGameInstances, gameExecution) => {
+                        var existingIdx = newGameInstances.findIndex((elem) => elem.key === gameExecution.instanceKey);
+
+                        if (existingIdx !== -1) {
+                            newGameInstances[existingIdx] = {
+                                key: gameExecution.imageKey,
+                                save: newGameInstances[existingIdx].save,
+                                execution: gameExecution
+                            }
+                        } else {
+                            newGameInstances.push({
+                                key: gameExecution.instanceKey,
+                                save: null,
+                                execution: gameExecution
+                            });
+                        }
+
+                        return newGameInstances;
+                    }, newGameInstances = oldState.gameInstances.concat([]))
+
+                    return { gameInstances: newGameInstances, loadingExecutions: false }
+                });
+            });
+
     }
 
-    static renderServersTable(servers) {
-        return (
-            <CardColumns>
-                {
-                    servers.map(s =>
-                        <Card style={{ width: '20rem' }} key={s.key}>
-                            <Card.Img variant="top" src={PlaceHolderImage} />
-                            <Card.Body>
-                                <Card.Title>{s.name}</Card.Title>
-                                <Card.Subtitle>0.17.x</Card.Subtitle>
-                                <Card.Text>{s.description}</Card.Text>
-                                Connection Info
-                            </Card.Body>
-                            <Card.Footer>
-                                <Row>
-                                    <Col>Col 1</Col>
-                                    <Col>
-                                        <Button variant="link"> <MdPlay size={24} /></Button>
-                                        <Button variant="link"><MdStop size={24} /></Button>
-                                        <Button variant="link"><MdSync size={24} /></Button>
-                                        <Link to={`edit/${s.key}`}><Button variant="link"> <MdEdit size={24} /></Button></Link>
-                                    </Col>
-                                </Row>
-                            </Card.Footer>
-                        </Card>
-                    )
-                }
-            </CardColumns>
-        );
+    onStartInstance(game) {
+        this.setState({
+            startingInstance: game.key
+        });
+    }
+
+    onStopInstance(game) {
+        fetch("/api/executions/" + game.key, {
+            method: "DELETE",
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+            .then(() => {
+                // Reload executions
+            })
+
+    }
+
+    onRestartInstance(game) {
+
     }
 
     render() {
-        let contents = this.state.loading
-            ? <p><em>Loading...</em></p>
-            : Home.renderServersTable(this.state.servers);
+        if (this.state.startingInstance) {
+            return (<Redirect to={`start/?save=${this.state.startingInstance}`} />)
+        }
 
         return (
-            <div>
-                {contents}
-                <Link to="/new"><Button >Add</Button></Link>
-            </div>
+            <GameList
+                loading={this.state.loadingExecutions || this.state.loadingGameInstances}
+                games={this.state.gameInstances}
+                onStartInstance={(game) => this.onStartInstance(game)}
+                onStopInstance={(game) => this.onStopInstance(game)}
+                onRestartInstance={(game) => this.onRestartInstance(game)}
+            />
         );
     }
 }

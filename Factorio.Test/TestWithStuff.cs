@@ -28,7 +28,7 @@ namespace Factorio.Test
 
         protected string FullPath { get { return this._testDir.FullName; } }
 
-        protected GameInstance AddTestSave(string saveFile)
+        protected GameInstance AddTestSave(string saveFile, int? patchVersion = 50)
         {
             string pathAssembly = System.Reflection.Assembly.GetExecutingAssembly().Location;
             string folderAssembly = Path.GetDirectoryName(pathAssembly);
@@ -43,7 +43,7 @@ namespace Factorio.Test
 
                 TargetMajorVersion = 0,
                 TargetMinorVersion = 17,
-                TargetPatchVersion = 20
+                TargetPatchVersion = patchVersion
             };
         }
 

@@ -32,34 +32,33 @@ namespace Factorio.Services.Execution.DockerImplementation
             this._dockerClient = new DockerClientConfiguration(new Uri(dockerConnectionUri)).CreateClient();
         }
 
+        #region Getters
+        /// <summary>
+        /// Gets all instances of the game (started by this program) running on docker
+        /// </summary>
+        /// <returns></returns>
         public async Task<IEnumerable<RunningInstance>> GetRunningInstancesAsync()
         {
-            IEnumerable<ContainerListResponse> runningInstances = await this._dockerClient.Containers.ListContainersAsync(new ContainersListParameters
-            {
-
-                Filters = new Dictionary<string, IDictionary<string, bool>> { { "label", new Dictionary<string, bool> { { DOCKER_LABEL_KEY, true } } } }
-            });
-
-            Dictionary<string, string> versionMap = new Dictionary<string, string>();
-            foreach (ContainerListResponse containerInfo in runningInstances)
-            {
-                string version = await this.GetImageVersionAsync(containerInfo.ImageID);
-                versionMap.TryAdd(containerInfo.ImageID, version);
-            }
-
-            return runningInstances.Select(containerInfo =>
-            {
-                return new RunningInstance
-                {
-                    Key = containerInfo.ID,
-                    Hostname = "localhost",
-                    Port = containerInfo.Ports.First(p => p.PrivatePort == 34197).PublicPort,
-                    RunningVersion = versionMap[containerInfo.ImageID],
-                    InstanceKey = containerInfo.Labels[DOCKER_LABEL_KEY]
-                };
-            });
+            return await GetRunningInstancesFromDockerAsync();
         }
 
+        /// <summary>
+        /// Gets the runing instance based on the key of the instance being run
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        public async Task<RunningInstance> GetByInstanceKeyAsync(string key)
+        {
+            IList<RunningInstance> instances = await GetRunningInstancesFromDockerAsync(key);
+
+            if (instances == null) return null;
+            if (instances.Count != 1) return null; // TODO - return something else maybe
+
+            return instances[0];
+        }
+        #endregion
+
+        #region Container control
         public async Task<RunningInstance> StartInstanceAsync(string host, int port, GameInstance instance)
         {
             await this.LoadImageAsync(instance);
@@ -89,32 +88,15 @@ namespace Factorio.Services.Execution.DockerImplementation
             string containerID = await this.GetContainerIDAsync(key: key);
             await this.StopContainerByIDAsync(containerID);
         }
+        #endregion
 
         private async Task<string> GetContainerIDAsync(int? port = null, string key = null)
         {
-            IDictionary<string, IDictionary<string, bool>> filters = new Dictionary<string, IDictionary<string, bool>>();
+            IList<RunningInstance> instances = await GetRunningInstancesFromDockerAsync(key, port);
 
-            if (port != null)
-            {
-                filters.Add("publish", new Dictionary<string, bool> { { string.Format("{0}", port), true } });
-            }
-
-            if (key != null)
-            {
-                filters.Add("label", new Dictionary<string, bool> { { string.Format("key={0}", key), true } });
-            }
-
-            IList<ContainerListResponse> containers = await this._dockerClient.Containers.ListContainersAsync(new ContainersListParameters
-            {
-                Filters = filters
-            });
-
-            if (containers.Count < 1)
-            {
-                return "";
-            }
-            ContainerListResponse first = containers[0];
-            return first.ID;
+            if (instances == null) return null;
+            if (instances.Count > 0) return null; // TODO - handle multiple
+            return instances[0].Key;
         }
 
 
@@ -177,6 +159,37 @@ namespace Factorio.Services.Execution.DockerImplementation
             await this._dockerClient.Containers.StartContainerAsync(newContainer.ID, new ContainerStartParameters());
 
             return newContainer.ID;
+        }
+
+        private async Task<IList<RunningInstance>> GetRunningInstancesFromDockerAsync(string instanceKey = null, int? port = null)
+        {
+            IDictionary<string, IDictionary<string, bool>> filters = new Dictionary<string, IDictionary<string, bool>>
+            { { "label", new Dictionary<string, bool> { { DOCKER_LABEL_KEY + (instanceKey == null ? "" : "=" + instanceKey), true } } } };
+
+            if (port != null) filters.Add("publish", new Dictionary<string, bool> { { string.Format("{0}", port), true } });
+
+            IEnumerable<ContainerListResponse> runningInstances = await this._dockerClient.Containers.ListContainersAsync(new ContainersListParameters { Filters = filters, All = true });
+
+            Dictionary<string, string> versionMap = new Dictionary<string, string>();
+            foreach (ContainerListResponse containerInfo in runningInstances)
+            {
+                string version = await this.GetImageVersionAsync(containerInfo.ImageID);
+                versionMap.TryAdd(containerInfo.ImageID, version);
+            }
+
+            return new List<RunningInstance>(runningInstances.Select(containerInfo =>
+           {
+               var exposedPort = containerInfo.Ports.FirstOrDefault(p => p.PrivatePort == 34197);
+
+               return new RunningInstance
+               {
+                   Key = containerInfo.ID,
+                   Hostname = "localhost",
+                   Port = exposedPort != null ? exposedPort.PublicPort : 0,
+                   RunningVersion = versionMap[containerInfo.ImageID],
+                   InstanceKey = containerInfo.Labels[DOCKER_LABEL_KEY]
+               };
+           }));
         }
 
         private string FormatVersion(GameInstance instance)

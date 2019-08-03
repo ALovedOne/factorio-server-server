@@ -22,5 +22,34 @@ namespace Factorio.Models
         //  - preview.jpg
 
         public IReadOnlyDictionary<string, string> ImplementationInfo { get; set; }
+
+
+        public bool Valid
+        {
+            get
+            {
+                if (!VersionValid) return false;
+                // TODO - check mod versions
+                return true;
+            }
+        }
+
+        private bool VersionValid
+        {
+            get
+            {
+                if (this.LastSave == null) return true;
+
+                if (this.TargetMajorVersion > this.LastSave.MajorVersion) return true;
+                if (this.TargetMajorVersion < this.LastSave.MajorVersion) return false;
+
+                if (this.TargetMinorVersion > this.LastSave.MinorVersion) return true;
+                if (this.TargetMinorVersion < this.LastSave.MinorVersion) return false;
+
+                if (this.TargetPatchVersion == null) return true;
+                if (this.TargetPatchVersion >= this.LastSave.PatchVersion) return true;
+                return false;
+            }
+        }
     }
 }

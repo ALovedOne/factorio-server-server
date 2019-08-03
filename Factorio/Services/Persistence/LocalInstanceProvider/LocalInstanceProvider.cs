@@ -128,7 +128,8 @@ namespace Factorio.Services.Persistence.LocalInstanceProvider
                     Name = value.Name,
                     Description = value.Description,
                     MajorVersion = value.TargetMajorVersion,
-                    MinorVersion = value.TargetMinorVersion
+                    MinorVersion = value.TargetMinorVersion,
+                    PatchVersion = value.TargetPatchVersion
                 };
                 w.Write(JsonConvert.SerializeObject(sInfo));
             }

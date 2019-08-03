@@ -17,6 +17,7 @@ namespace Factorio.Controllers
         public ExecutionsController(IRunnerService runner, IInstanceProvider instanceService)
         {
             this._runner = runner;
+            this._instances = instanceService;
         }
 
         // GET: api/Execution
@@ -60,7 +61,7 @@ namespace Factorio.Controllers
         public async Task<IActionResult> Delete(string Key)
         {
             IEnumerable<RunningInstance> instances = await this._runner.GetRunningInstancesAsync();
-            RunningInstance instance = instances.FirstOrDefault(x => x.Key == Key);
+            RunningInstance instance = instances.FirstOrDefault(x => x.InstanceKey == Key);
             if (instance == null)
             {
                 return NotFound();

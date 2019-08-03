@@ -89,8 +89,15 @@ export class EditServer extends Component {
                         placeholder="minor"
                         value={server.targetMinorVersion}
                         onChange={(event) => this.handleInputChange(event, "targetMinorVersion")}
-                        disabled={!server.targetMajorVersion}
+                        disabled={server.targetMajorVersion == null}
                     />
+                    <Form.Control
+                        placeholder="patch"
+                        value={server.targetPatchVersion}
+                        onChange={(event) => this.handleInputChange(event, "targetPatchVersion")}
+                        disabled={server.targetMinorVersion == null}
+                    />
+
                     <Button
                         variant="primary"
                         type="submit"

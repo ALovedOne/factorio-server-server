@@ -1,7 +1,7 @@
 ﻿using Factorio.Models;
 using Factorio.Persistence.Utils;
 using Factorio.Services.Interfaces;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Slugify;
 using System.Collections.Generic;
@@ -17,8 +17,6 @@ namespace Factorio.Services.Persistence.LocalInstanceProvider
     {
         // Constants
         private const string SERVER_INFO_FILE_NAME = "server-info.json";
-        private const string CONFIG_SECTION_NAME = "LocalPersistenceProvider";
-        private const string CONFIG_BASE_DIR_VALUE_NAME = "BaseDirectory";
 
         private Regex MOD_ZIP_REGEX = new Regex(@"(.*)_(\d+)\.(\d+)\.(\d+)\.zip");
 
@@ -26,14 +24,10 @@ namespace Factorio.Services.Persistence.LocalInstanceProvider
         private DirectoryInfo _baseDirectory;
         private ISlugHelper _slug;
 
-        public LocalInstanceProvider(IConfiguration config)
+        #region ctor
+        public LocalInstanceProvider(IOptionsMonitor<LocalInstanceOptions> optionsAccessor) :
+            this(optionsAccessor.CurrentValue.BaseDirectory)
         {
-            IConfigurationSection section = config.GetSection(CONFIG_SECTION_NAME);
-            string serverBaseDirectoryPath = section.GetValue<string>(CONFIG_BASE_DIR_VALUE_NAME);
-
-            // TODO - replace with call to other constructor
-            _baseDirectory = new DirectoryInfo(serverBaseDirectoryPath);
-            _slug = new SlugHelper(new SlugHelper.Config());
         }
 
         public LocalInstanceProvider(string serverBaseDirectoryPath)
@@ -41,12 +35,7 @@ namespace Factorio.Services.Persistence.LocalInstanceProvider
             _baseDirectory = new DirectoryInfo(serverBaseDirectoryPath);
             _slug = new SlugHelper(new SlugHelper.Config());
         }
-
-        private bool Verify()
-        {
-            // TODO - check permissions
-            return _baseDirectory.Exists;
-        }
+        #endregion
 
         public IEnumerable<GameInstance> GetAll()
         {
@@ -133,6 +122,12 @@ namespace Factorio.Services.Persistence.LocalInstanceProvider
                 };
                 w.Write(JsonConvert.SerializeObject(sInfo));
             }
+        }
+
+        private bool Verify()
+        {
+            // TODO - check permissions
+            return _baseDirectory.Exists;
         }
 
         private DirectoryInfo GetServerDirectory(string slug)

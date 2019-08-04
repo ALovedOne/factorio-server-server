@@ -6,10 +6,10 @@ namespace Factorio.Services.Interfaces
 {
     public interface IRunnerService
     {
-        Task<IEnumerable<RunningInstance>> GetRunningInstancesAsync();
-        Task<RunningInstance> GetByRunningInstanceKeyAsync(string key);
+        Task<IEnumerable<ExecutionInfo>> GetExecutionInfosAsync();
+        Task<ExecutionInfo> GetByExecutionInfoKeyAsync(string key);
 
-        Task<RunningInstance> StartInstanceAsync(string host, int port, GameInstance instance);
+        Task<ExecutionInfo> StartInstanceAsync(string host, int port, GameInstance instance);
 
         Task StopInstanceAsync(string host, int port);
         Task StopInstanceAsync(string key);

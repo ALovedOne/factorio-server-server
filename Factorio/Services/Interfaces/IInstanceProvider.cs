@@ -8,7 +8,7 @@ namespace Factorio.Services.Interfaces
         IEnumerable<GameInstance> GetAll();
         GameInstance GetById(string key);
         void UpdateServer(string key, GameInstance value);
-        bool IdExists(string slug);
+        bool IdExists(string key);
 
         bool TryAddServer(GameInstance value, out string newId);
     }

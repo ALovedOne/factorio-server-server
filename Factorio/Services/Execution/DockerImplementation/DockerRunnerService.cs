@@ -3,7 +3,9 @@ using Docker.DotNet.Models;
 using Factorio.Models;
 using Factorio.Services.Interfaces;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,24 +14,29 @@ namespace Factorio.Services.Execution.DockerImplementation
 {
     public class DockerRunnerService : IRunnerService
     {
-        private const string CONFIG_SECTION_NAME = "DockerRunner";
-        private const string CONFIG_CONNECTION_URL = "Uri";
-
         private const string DOCKER_LABEL_KEY = "factorio-server-key";
 
-        private readonly IDictionary<string, string> _imageVersionMap = new Dictionary<string, string>();
+        private readonly ConcurrentDictionary<string, string> _imageVersionMap = new ConcurrentDictionary<string, string>();
+
         private readonly DockerClient _dockerClient;
+        private readonly int _portRangeStart;
+        private readonly int _portRangeEnd;
 
-        public DockerRunnerService(IConfiguration config)
+
+        /*
+         * Adding pre-emtive port checking
+         *   - Add dictionary, lock dict, check port, if valid add, unlock, try to start, if fails, remove, when stopped remove
+         */
+        public DockerRunnerService(IOptions<DockerExecutionOptions> options)
         {
-            // TODO - handle figuring which type of machine you are on
-            string defaultUrl = "npipe://./pipe/docker_engine";
-            // string defaultUrl = "unix:/var/run/docker.sock";
+            string defaultUrl =
+                Environment.OSVersion.Platform == PlatformID.Unix ?
+                    "unix:/var/run/docker.sock" :
+                    "npipe://./pipe/docker_engine";
 
-            IConfigurationSection section = config.GetSection(CONFIG_SECTION_NAME);
-            string dockerConnectionUri = section.GetValue<string>(CONFIG_CONNECTION_URL, defaultUrl);
-
-            this._dockerClient = new DockerClientConfiguration(new Uri(dockerConnectionUri)).CreateClient();
+            this._dockerClient = new DockerClientConfiguration(new Uri(options.Value.DockerUrl ?? defaultUrl)).CreateClient();
+            this._portRangeStart = options.Value.PortRangeBegin;
+            this._portRangeEnd = options.Value.PortRangeEnd;
         }
 
         #region Getters
@@ -37,9 +44,9 @@ namespace Factorio.Services.Execution.DockerImplementation
         /// Gets all instances of the game (started by this program) running on docker
         /// </summary>
         /// <returns></returns>
-        public async Task<IEnumerable<RunningInstance>> GetRunningInstancesAsync()
+        public async Task<IEnumerable<ExecutionInfo>> GetExecutionInfosAsync()
         {
-            return await GetRunningInstancesFromDockerAsync();
+            return await GetExecutionInfosFromDockerAsync();
         }
 
         /// <summary>
@@ -47,9 +54,9 @@ namespace Factorio.Services.Execution.DockerImplementation
         /// </summary>
         /// <param name="key"></param>
         /// <returns></returns>
-        public async Task<RunningInstance> GetByRunningInstanceKeyAsync(string key)
+        public async Task<ExecutionInfo> GetByExecutionInfoKeyAsync(string key)
         {
-            IList<RunningInstance> instances = await GetRunningInstancesFromDockerAsync(key);
+            IList<ExecutionInfo> instances = await GetExecutionInfosFromDockerAsync(key);
 
             if (instances == null) return null;
             if (instances.Count != 1) return null; // TODO - return something else maybe
@@ -59,19 +66,32 @@ namespace Factorio.Services.Execution.DockerImplementation
         #endregion
 
         #region Container control
-        public async Task<RunningInstance> StartInstanceAsync(string host, int port, GameInstance instance)
+        public async Task<ExecutionInfo> StartInstanceAsync(string host, int port, GameInstance instance)
         {
-            await this.LoadImageAsync(instance);
-            // TODO - handle invliad info
-            string newID = await this.StartImageAsync(instance, port, instance.ImplementationInfo.GetValueOrDefault("localPath", ""));
+            string version;
 
-            RunningInstance i = new RunningInstance
+            if (port < this._portRangeStart || port > this._portRangeEnd)
+            {
+                // TODO - also check other instances (not trivial due to race condition)
+                throw new Exception("TODO - Invalid port");
+            }
+
+            if (instance.TargetVersion.Patch == null)
+                version = string.Format("{0}.{1}", instance.TargetVersion.Major, instance.TargetVersion.Minor);
+            else
+                version = string.Format("{0}.{1}.{2}", instance.TargetVersion.Major, instance.TargetVersion.Minor, instance.TargetVersion.Patch);
+
+            await this.LoadImageAsync(version);
+            // TODO - handle invliad info
+            string newID = await this.StartImageAsync(instance.Key, port, instance.ImplementationInfo.GetValueOrDefault("localPath", ""), version);
+
+            ExecutionInfo i = new ExecutionInfo
             {
                 Key = newID,
                 Hostname = host,
                 Port = port,
 
-                RunningVersion = FormatVersion(instance),
+                RunningVersion = version,
                 InstanceKey = instance.Key,
             };
             return i;
@@ -92,7 +112,7 @@ namespace Factorio.Services.Execution.DockerImplementation
 
         private async Task<string> GetContainerIDAsync(int? port = null, string key = null)
         {
-            IList<RunningInstance> instances = await GetRunningInstancesFromDockerAsync(key, port);
+            IList<ExecutionInfo> instances = await GetExecutionInfosFromDockerAsync(key, port);
 
             if (instances == null) return null;
             if (instances.Count > 1) return null; // TODO - handle multiple
@@ -109,13 +129,13 @@ namespace Factorio.Services.Execution.DockerImplementation
             });
         }
 
-        private async Task LoadImageAsync(GameInstance instance)
+        private async Task LoadImageAsync(string version)
         {
 
             await this._dockerClient.Images.CreateImageAsync(new ImagesCreateParameters
             {
                 FromImage = "factoriotools/factorio",
-                Tag = FormatVersion(instance)
+                Tag = version
             }, new AuthConfig(), new ProgressSink());
 
         }
@@ -127,7 +147,7 @@ namespace Factorio.Services.Execution.DockerImplementation
         /// <param name="port"></param>
         /// <param name="sourcePath"></param>
         /// <returns></returns>
-        private async Task<string> StartImageAsync(GameInstance instance, int port, string sourcePath)
+        private async Task<string> StartImageAsync(string key, int port, string sourcePath, string version)
         {
             CreateContainerResponse newContainer = null;
             try
@@ -136,12 +156,12 @@ namespace Factorio.Services.Execution.DockerImplementation
                 {
                     Labels = new Dictionary<string, string>
                 {
-                    {DOCKER_LABEL_KEY, instance.Key }
+                    {DOCKER_LABEL_KEY, key }
                 },
                     Volumes = new Dictionary<string, EmptyStruct> { { "/factorio", new EmptyStruct() } },
-                    Image = "factoriotools/factorio:" + FormatVersion(instance),
+                    Image = "factoriotools/factorio:" + version,
                     ExposedPorts = new Dictionary<string, EmptyStruct> { { "34197/udp", new EmptyStruct() } },
-                    Name = "factorio-server-" + instance.Key,
+                    Name = "factorio-server-" + key,
                     HostConfig = new HostConfig
                     {
                         PortBindings = new Dictionary<string, IList<PortBinding>> { { "34197/udp", new[] { new PortBinding { HostPort = string.Format("{0}", port) } } } },
@@ -151,7 +171,7 @@ namespace Factorio.Services.Execution.DockerImplementation
                         {
                             Target = "/factorio",
                             Type="bind",
-                            Source = sourcePath // TODO - get actual bind path
+                            Source = sourcePath
                         }
                     }
                     }
@@ -174,17 +194,17 @@ namespace Factorio.Services.Execution.DockerImplementation
         /// <param name="instanceKey"></param>
         /// <param name="port"></param>
         /// <returns></returns>
-        private async Task<IList<RunningInstance>> GetRunningInstancesFromDockerAsync(string instanceKey = null, int? port = null)
+        private async Task<IList<ExecutionInfo>> GetExecutionInfosFromDockerAsync(string instanceKey = null, int? port = null)
         {
             IDictionary<string, IDictionary<string, bool>> filters = new Dictionary<string, IDictionary<string, bool>>
             { { "label", new Dictionary<string, bool> { { DOCKER_LABEL_KEY + (instanceKey == null ? "" : "=" + instanceKey), true } } } };
 
             if (port != null) filters.Add("publish", new Dictionary<string, bool> { { string.Format("{0}", port), true } });
 
-            IEnumerable<ContainerListResponse> runningInstances = await this._dockerClient.Containers.ListContainersAsync(new ContainersListParameters { Filters = filters, All = true });
-            await LoadImageInfo(runningInstances);
+            IEnumerable<ContainerListResponse> ExecutionInfos = await this._dockerClient.Containers.ListContainersAsync(new ContainersListParameters { Filters = filters, All = true });
+            await LoadImageInfo(ExecutionInfos);
 
-            return new List<RunningInstance>(runningInstances.Select(containerInfo => MapDockerContainer(containerInfo)));
+            return new List<ExecutionInfo>(ExecutionInfos.Select(containerInfo => MapDockerContainer(containerInfo)));
         }
 
         /// <summary>
@@ -196,11 +216,7 @@ namespace Factorio.Services.Execution.DockerImplementation
         {
             Task[] tasks = responses.Select(async r =>
             {
-                if (!_imageVersionMap.ContainsKey(r.ImageID))
-                {
-                    string version = await GetImageVersionAsync(r.ImageID);
-                    _imageVersionMap.Add(r.ImageID, version);
-                }
+                string version = await GetImageVersionAsync(r.ImageID);
             }).ToArray();
 
             await Task.WhenAll(tasks);
@@ -211,12 +227,13 @@ namespace Factorio.Services.Execution.DockerImplementation
         /// </summary>
         /// <param name="containerInfo"></param>
         /// <returns></returns>
-        private RunningInstance MapDockerContainer(ContainerListResponse containerInfo)
+        private ExecutionInfo MapDockerContainer(ContainerListResponse containerInfo)
         {
             Port exposedPort = containerInfo.Ports.FirstOrDefault(p => p.PrivatePort == 34197);
-            string runningVersion = _imageVersionMap[containerInfo.ImageID];
+            string runningVersion;
+            TryGetImageVersion(containerInfo.ImageID, out runningVersion);
 
-            return new RunningInstance
+            return new ExecutionInfo
             {
                 Key = containerInfo.ID,
                 Hostname = "localhost",
@@ -229,16 +246,18 @@ namespace Factorio.Services.Execution.DockerImplementation
         /// <summary>
         /// TODO
         /// </summary>
-        /// <param name="instance"></param>
+        /// <param name="imageID"></param>
         /// <returns></returns>
-        private string FormatVersion(GameInstance instance)
+        private async Task<string> GetImageVersionAsync(string imageID)
         {
-            string version = string.Format("{0}.{1}", instance.TargetMajorVersion, instance.TargetMinorVersion);
-            if (instance.TargetPatchVersion != null)
-            {
-                version = string.Format("{0}.{1}", version, instance.TargetPatchVersion);
-            }
+            if (this._imageVersionMap.TryGetValue(imageID, out string versionString))
+                return versionString;
 
+            ImageInspectResponse imageInfo = await this._dockerClient.Images.InspectImageAsync(imageID);
+            string version = imageInfo.Config.Env.First(env => env.StartsWith("VERSION")).Split("=")[1];
+
+            if (!this._imageVersionMap.ContainsKey(imageID))
+                this._imageVersionMap.TryAdd(imageID, version);
             return version;
         }
 
@@ -246,20 +265,11 @@ namespace Factorio.Services.Execution.DockerImplementation
         /// TODO
         /// </summary>
         /// <param name="imageID"></param>
+        /// <param name="versionString"></param>
         /// <returns></returns>
-        private async Task<string> GetImageVersionAsync(string imageID)
+        private bool TryGetImageVersion(string imageID, out string versionString)
         {
-
-            if (this._imageVersionMap.TryGetValue(imageID, out string versionString))
-            {
-                return versionString;
-            }
-
-            ImageInspectResponse imageInfo = await this._dockerClient.Images.InspectImageAsync(imageID);
-            string version = imageInfo.Config.Env.First(env => env.StartsWith("VERSION")).Split("=")[1];
-
-            this._imageVersionMap.Add(imageID, version);
-            return version;
+            return this._imageVersionMap.TryGetValue(imageID, out versionString);
         }
     }
 

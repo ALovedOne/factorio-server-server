@@ -14,13 +14,7 @@ namespace Factorio.Test
 
         public LocalInstanceProviderTest() : base()
         {
-            IConfigurationRoot configRoot = new ConfigurationBuilder()
-                .AddInMemoryCollection(new List<KeyValuePair<string, string>>
-                {
-                    new KeyValuePair<string, string>("LocalPersistenceProvider:BaseDirectory",this.FullPath)
-                })
-                .Build();
-            this._instanceProvider = new LocalInstanceProvider(configRoot);
+            this._instanceProvider = new LocalInstanceProvider(FullPath);
         }
 
         [Fact]
@@ -44,7 +38,7 @@ namespace Factorio.Test
             GameInstance testInstance = this._instanceProvider.GetById("save_17_50");
             Assert.NotNull(testInstance);
             Assert.Equal("save_17_50", testInstance.Key);
-            Assert.Equal(17, testInstance.LastSave.MinorVersion);
+            Assert.Equal(17, testInstance.LastSave.Version.Minor);
         }
 
         [Fact]
@@ -77,18 +71,21 @@ namespace Factorio.Test
             {
                 Description = "New Description",
                 Name = "New Dir",
-                TargetMajorVersion = 0,
-                TargetMinorVersion = 17,
-                TargetPatchVersion = 20
+                TargetVersion = new FuzzyVersion
+                {
+                    Major = 0,
+                    Minor = 17,
+                    Patch = 20
+                }
             }, out string newId));
             Assert.Equal("new-dir", newId);
 
             GameInstance newServer = this._instanceProvider.GetById(newId);
             Assert.Equal("New Description", newServer.Description);
             Assert.Equal("New Dir", newServer.Name);
-            Assert.Equal(0, newServer.TargetMajorVersion);
-            Assert.Equal(17, newServer.TargetMinorVersion);
-            Assert.Equal(20, newServer.TargetPatchVersion);
+            Assert.Equal(0, newServer.TargetVersion.Major);
+            Assert.Equal(17, newServer.TargetVersion.Minor);
+            Assert.Equal(20, newServer.TargetVersion.Patch);
             // TODO
             // Assert.Equal(Path.Combine(this.FullPath, "new-dir"), newServer.LocalPath);
         }
@@ -98,9 +95,9 @@ namespace Factorio.Test
         {
             const string newServerName = "New Server Name";
             const string newServerDescription = "New Server Description";
-            this.AddTestSave("save_17_50");
+            GameInstance game = this.AddTestSave("save_17_50");
 
-            this._instanceProvider.UpdateServer("save_17_50", new GameInstance { Name = newServerName, Description = newServerDescription });
+            this._instanceProvider.UpdateServer("save_17_50", new GameInstance { Name = newServerName, Description = newServerDescription, TargetVersion = game.TargetVersion });
             GameInstance testInstance = this._instanceProvider.GetById("save_17_50");
 
             Assert.Equal(newServerName, testInstance.Name);
@@ -116,9 +113,9 @@ namespace Factorio.Test
             Assert.Single(all);
 
             GameInstance testInstance = all[0];
-            Assert.Equal(0, testInstance.LastSave.MajorVersion);
-            Assert.Equal(17, testInstance.LastSave.MinorVersion);
-            Assert.Equal(50, testInstance.LastSave.PatchVersion);
+            Assert.Equal(0, testInstance.LastSave.Version.Major);
+            Assert.Equal(17, testInstance.LastSave.Version.Minor);
+            Assert.Equal(50, testInstance.LastSave.Version.Patch);
         }
 
         [Fact]

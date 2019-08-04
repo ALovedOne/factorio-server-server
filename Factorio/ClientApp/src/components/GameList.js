@@ -28,15 +28,15 @@ function GameList(props) {
 }
 
 function GameCard(props) {
-    var save = props.game.save;
-    var execution = props.game.execution;
+    var game = props.game;
+    var execution = props.game.currentExecution;
 
     var footer = (
         <Col>
             <Button variant="link" onClick={() => props.onStartInstance(props.game)}><MdPlay size={24} /></Button>
         </Col>);
 
-    var targetVersion = `${save.targetMajorVersion}.${save.targetMinorVersion}.${save.targetPatchVersion ? save.targetPatchVersion : 'x'}`;
+    var targetVersion = formatVersion(game.targetVersion);
 
     if (execution) {
         footer = (
@@ -47,27 +47,45 @@ function GameCard(props) {
         var runningVersion = execution.runningVersion;
     }
 
+    if (game.lastSave) {
+        var saveVersion = formatVersion(game.lastSave.version); 
+    }
+
     // Add save.mods
-    // Add save.lastSave
     return (
-        <Card style={{ width: '20rem' }}>
+        <Card >
             <Card.Img variant="top" src={PlaceHolderImage} />
             <Card.Body>
-                <Card.Title>{save.name}</Card.Title>
-                <Card.Subtitle>{targetVersion} {runningVersion ? `(Running: ${runningVersion} )` : ''}</Card.Subtitle>
-                <Card.Text>{save.description}</Card.Text>
-                Connection Info
+                <Card.Title>{game.name}</Card.Title>
+                <Card.Subtitle>{targetVersion} {runningVersion ? `(Running: ${runningVersion})` : saveVersion ? `(Last Save: ${saveVersion})` : ""}</Card.Subtitle>
+                <Card.Text>
+                    {game.description}
+                </Card.Text>
+                <Card.Text>
+                    Mod Count: {game.mods.length}
+                </Card.Text>
+                <Card.Text>
+                    Connection Info
+                </Card.Text>
             </Card.Body>
             <Card.Footer>
                 <Row>
                     {footer}
                     <Col>
-                        <Link to={`edit/${save.key}`}><Button variant="link"> <MdEdit size={24} /></Button></Link>
+                        <Link to={`edit/${game.key}`}><Button variant="link"> <MdEdit size={24} /></Button></Link>
                     </Col>
                 </Row>
             </Card.Footer>
-        </Card>
+        </Card >
     );
+}
+
+function formatVersion(version) {
+    if (version.patch) {
+        return `${version.major}.${version.minor}.${version.patch}`;
+    } else {
+        return `${version.major}.${version.minor}x`;
+    }
 }
 
 export { GameList };

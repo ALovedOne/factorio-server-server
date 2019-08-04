@@ -40,10 +40,12 @@ namespace Factorio.Test
             {
                 Key = "test-server-" + saveFile,
                 ImplementationInfo = new Dictionary<string, string> { { "localPath", Path.Combine(this._testDir.FullName, saveFile) } },
-
-                TargetMajorVersion = 0,
-                TargetMinorVersion = 17,
-                TargetPatchVersion = patchVersion
+                TargetVersion = new FuzzyVersion
+                {
+                    Major = 0,
+                    Minor = 17,
+                    Patch = patchVersion
+                }
             };
         }
 
@@ -54,9 +56,12 @@ namespace Factorio.Test
             {
                 Key = "test-server-" + dirName,
                 ImplementationInfo = new Dictionary<string, string> { { "localPath", d.FullName } },
-                TargetMajorVersion = 0,
-                TargetMinorVersion = 17,
-                TargetPatchVersion = PatchVersion
+                TargetVersion = new FuzzyVersion
+                {
+                    Major = 0,
+                    Minor = 17,
+                    Patch = PatchVersion
+                }
             };
         }
     }

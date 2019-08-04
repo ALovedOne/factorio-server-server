@@ -3,6 +3,7 @@ using Docker.DotNet.Models;
 using Factorio.Models;
 using Factorio.Services.Execution.DockerImplementation;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -21,11 +22,9 @@ namespace Factorio.Test
 
             this._dockerClient = new DockerClientConfiguration(new Uri("npipe://./pipe/docker_engine")) // TODO - handle windows/linux
                     .CreateClient();
-
-            IConfigurationRoot configRoot = new ConfigurationBuilder()
-                //.AddInMemoryCollection(new List<KeyValuePair<string, string>> { new KeyValuePair<string, string>("LocalPersistenceProvider:BaseDirectory", this._testDir.FullName) })
-                .Build();
-            this._service = new DockerRunnerService(configRoot);
+            
+            this._service = new DockerRunnerService(null);
+          
         }
 
         public new void Dispose()
@@ -40,8 +39,8 @@ namespace Factorio.Test
         {
             GameInstance i = this.AddBlankDir("blank-dir");
 
-            RunningInstance x = await this._service.StartInstanceAsync("localhost", 9999, i);
-            RunningInstance dockerInst = x as RunningInstance;
+            ExecutionInfo x = await this._service.StartInstanceAsync("localhost", 9999, i);
+            ExecutionInfo dockerInst = x as ExecutionInfo;
 
             ContainerInspectResponse containerInfo = await this._dockerClient.Containers.InspectContainerAsync(dockerInst.Key);
             Assert.Equal("factoriotools/factorio:0.17", containerInfo.Config.Image);
@@ -61,7 +60,7 @@ namespace Factorio.Test
         {
             GameInstance i = this.AddBlankDir("blank-dir", 54);
 
-            RunningInstance dockerInst = await this._service.StartInstanceAsync("localhost", 9999, i);
+            ExecutionInfo dockerInst = await this._service.StartInstanceAsync("localhost", 9999, i);
 
             ContainerInspectResponse containerInfo = await this._dockerClient.Containers.InspectContainerAsync(dockerInst.Key);
             Assert.Equal("factoriotools/factorio:0.17.54", containerInfo.Config.Image);
@@ -84,7 +83,7 @@ namespace Factorio.Test
         */
 
         [Fact]
-        public async Task TestGetRunningInstancesAsync()
+        public async Task TestGetExecutionInfosAsync()
         {
             GameInstance i1 = this.AddTestSave("save_15_40");
             GameInstance i2 = this.AddTestSave("save_17_50");
@@ -92,9 +91,9 @@ namespace Factorio.Test
             await this._service.StartInstanceAsync("localhost", 9999, i1);
             await this._service.StartInstanceAsync("localhost", 9998, i2);
 
-            IList<RunningInstance> runningInstances = new List<RunningInstance>(await this._service.GetRunningInstancesAsync());
+            IList<ExecutionInfo> ExecutionInfos = new List<ExecutionInfo>(await this._service.GetExecutionInfosAsync());
 
-            Assert.Equal(2, runningInstances.Count);
+            Assert.Equal(2, ExecutionInfos.Count);
         }
 
         private async Task KillAllDockerInstancesAsync()

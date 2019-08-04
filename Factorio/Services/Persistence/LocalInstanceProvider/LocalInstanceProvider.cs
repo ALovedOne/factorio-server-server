@@ -1,7 +1,7 @@
 ﻿using Factorio.Models;
 using Factorio.Persistence.Utils;
 using Factorio.Services.Interfaces;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Slugify;
 using System.Collections.Generic;
@@ -17,8 +17,6 @@ namespace Factorio.Services.Persistence.LocalInstanceProvider
     {
         // Constants
         private const string SERVER_INFO_FILE_NAME = "server-info.json";
-        private const string CONFIG_SECTION_NAME = "LocalPersistenceProvider";
-        private const string CONFIG_BASE_DIR_VALUE_NAME = "BaseDirectory";
 
         private Regex MOD_ZIP_REGEX = new Regex(@"(.*)_(\d+)\.(\d+)\.(\d+)\.zip");
 
@@ -26,14 +24,10 @@ namespace Factorio.Services.Persistence.LocalInstanceProvider
         private DirectoryInfo _baseDirectory;
         private ISlugHelper _slug;
 
-        public LocalInstanceProvider(IConfiguration config)
+        #region ctor
+        public LocalInstanceProvider(IOptionsMonitor<LocalInstanceOptions> optionsAccessor) :
+            this(optionsAccessor.CurrentValue.BaseDirectory)
         {
-            IConfigurationSection section = config.GetSection(CONFIG_SECTION_NAME);
-            string serverBaseDirectoryPath = section.GetValue<string>(CONFIG_BASE_DIR_VALUE_NAME);
-
-            // TODO - replace with call to other constructor
-            _baseDirectory = new DirectoryInfo(serverBaseDirectoryPath);
-            _slug = new SlugHelper(new SlugHelper.Config());
         }
 
         public LocalInstanceProvider(string serverBaseDirectoryPath)
@@ -41,12 +35,7 @@ namespace Factorio.Services.Persistence.LocalInstanceProvider
             _baseDirectory = new DirectoryInfo(serverBaseDirectoryPath);
             _slug = new SlugHelper(new SlugHelper.Config());
         }
-
-        private bool Verify()
-        {
-            // TODO - check permissions
-            return _baseDirectory.Exists;
-        }
+        #endregion
 
         public IEnumerable<GameInstance> GetAll()
         {
@@ -100,9 +89,9 @@ namespace Factorio.Services.Persistence.LocalInstanceProvider
                 {
                     Name = newServer.Name,
                     Description = newServer.Description,
-                    MajorVersion = newServer.TargetMajorVersion,
-                    MinorVersion = newServer.TargetMinorVersion,
-                    PatchVersion = newServer.TargetPatchVersion
+                    MajorVersion = newServer.TargetVersion.Major,
+                    MinorVersion = newServer.TargetVersion.Minor,
+                    PatchVersion = newServer.TargetVersion.Patch
                 };
                 w.Write(JsonConvert.SerializeObject(sInfo));
             }
@@ -127,12 +116,18 @@ namespace Factorio.Services.Persistence.LocalInstanceProvider
                 {
                     Name = value.Name,
                     Description = value.Description,
-                    MajorVersion = value.TargetMajorVersion,
-                    MinorVersion = value.TargetMinorVersion,
-                    PatchVersion = value.TargetPatchVersion
+                    MajorVersion = value.TargetVersion.Major,
+                    MinorVersion = value.TargetVersion.Minor,
+                    PatchVersion = value.TargetVersion.Patch
                 };
                 w.Write(JsonConvert.SerializeObject(sInfo));
             }
+        }
+
+        private bool Verify()
+        {
+            // TODO - check permissions
+            return _baseDirectory.Exists;
         }
 
         private DirectoryInfo GetServerDirectory(string slug)
@@ -181,7 +176,16 @@ namespace Factorio.Services.Persistence.LocalInstanceProvider
               string minorVersion = regexMathc.Groups[3].Value;
               string patchVersion = regexMathc.Groups[4].Value;
 
-              return new Mod(modName, new byte[] { byte.Parse(majorVersion), byte.Parse(minorVersion), byte.Parse(patchVersion) });
+              return new Mod
+              {
+                  Name = modName,
+                  Version = new SpecificVersion
+                  {
+                      Major = byte.Parse(majorVersion),
+                      Minor = byte.Parse(minorVersion),
+                      Patch = byte.Parse(patchVersion)
+                  }
+              };
           }));
         }
 
@@ -264,9 +268,12 @@ namespace Factorio.Services.Persistence.LocalInstanceProvider
                 Key = serverInfoFile.Directory.Name,
                 Name = sInfo.Name,
                 Description = sInfo.Description,
-                TargetMajorVersion = sInfo.MajorVersion.GetValueOrDefault(0),
-                TargetMinorVersion = sInfo.MinorVersion.GetValueOrDefault(17),
-                TargetPatchVersion = sInfo.PatchVersion,
+                TargetVersion = new FuzzyVersion
+                {
+                    Major = sInfo.MajorVersion.GetValueOrDefault(0),
+                    Minor = sInfo.MinorVersion.GetValueOrDefault(17),
+                    Patch = sInfo.PatchVersion
+                },
                 ImplementationInfo = new Dictionary<string, string> { { "localPath", serverInfoFile.Directory.FullName } }
             };
         }

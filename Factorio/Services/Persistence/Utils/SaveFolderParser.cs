@@ -12,7 +12,6 @@ namespace Factorio.Persistence.Utils
         {
             int majorVersion, minorVersion, patchVersion;
             List<Mod> modList = new List<Mod>();
-            string previewImage = null;
 
             using (ZipArchive zip = ZipFile.OpenRead(fileName.FullName))
             {
@@ -53,7 +52,11 @@ namespace Factorio.Persistence.Utils
             string name = r.ReadString();
             byte[] version = r.ReadBytes(3);
             r.ReadBytes(4);
-            return new Mod(name, version);
+            return new Mod
+            {
+                Name = name,
+                Version = new SpecificVersion(version[0], version[1], version[2])
+            };
         }
     }
 }

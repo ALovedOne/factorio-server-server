@@ -23,43 +23,28 @@ namespace Factorio.Controllers
 
         // GET: api/Server
         [HttpGet]
-        public async Task<IEnumerable<ReturnDict>> Get()
+        public async Task<IEnumerable<GameInstance>> Get()
         {
-            Task<IEnumerable<RunningInstance>> runningInstancesTask = _runner.GetRunningInstancesAsync();
+            Task<IEnumerable<ExecutionInfo>> ExecutionInfosTask = _runner.GetExecutionInfosAsync();
 
             IEnumerable<GameInstance> gameInstances = _servers.GetAll();
 
-            IEnumerable<RunningInstance> runningInstances = await runningInstancesTask;
+            IEnumerable<ExecutionInfo> ExecutionInfos = await ExecutionInfosTask;
 
-            return gameInstances.Select(g => new ReturnDict
-            {
-                Key = g.Key,
-                Save = g,
-                Execution = runningInstances.SingleOrDefault(r => r.InstanceKey == g.Key)
-            });
+            return gameInstances.Select(g => { g.CurrentExecution = ExecutionInfos.SingleOrDefault(r => r.InstanceKey == g.Key); return g; });
         }
 
-        // GET: api/Server/5
-        [HttpGet("{slug}")]
-        public async Task<IActionResult> GetAsync(string slug)
+        [HttpGet("{key}")]
+        public async Task<IActionResult> GetAsync(string key)
         {
-            if (_servers.IdExists(slug))
-            {
-                ReturnDict ret = new ReturnDict
-                {
-                    Key = slug,
-                    Save = _servers.GetById(slug),
-                    Execution = await _runner.GetByRunningInstanceKeyAsync(slug)
-                };
-                return Ok(ret);
-            }
-            else
-            {
-                return NotFound();
-            }
+            GameInstance g = _servers.GetById(key);
+            if (g == null)
+                return NotFound(key);
+
+            g.CurrentExecution = await _runner.GetByExecutionInfoKeyAsync(key);
+            return Ok(g);
         }
 
-        // POST: api/Server
         [HttpPost]
         public IActionResult Post([FromBody] GameInstance value)
         {
@@ -69,27 +54,26 @@ namespace Factorio.Controllers
             }
             else
             {
-                return this.BadRequest();
+                return BadRequest();
             }
         }
 
-        // PUT: api/Server/5
-        [HttpPut("{slug}")]
-        public void Put(string slug, [FromBody] GameInstance value)
+        [HttpPut("{key}")]
+        public void Put(string key, [FromBody] GameInstance value)
         {
-            _servers.UpdateServer(slug, value);
+            _servers.UpdateServer(key, value);
         }
 
 
         [HttpPost("{key}/start")]
         public async Task<IActionResult> StartInstance(string key, int port)
         {
-            RunningInstance r = await this._runner.GetByRunningInstanceKeyAsync(key);
-            if (r != null) return BadRequest("Key is alread running");
+            ExecutionInfo r = await _runner.GetByExecutionInfoKeyAsync(key);
+            if (r != null) return BadRequest("Instance is alread running");
 
 
             GameInstance instance = _servers.GetById(key);
-            if (instance == null) return NotFound(""); // TODO - description
+            if (instance == null) return NotFound(key);
 
             r = await _runner.StartInstanceAsync("localhost", port, instance);
             return Ok(r);
@@ -98,42 +82,34 @@ namespace Factorio.Controllers
         [HttpPost("{key}/restart")]
         public async Task<IActionResult> RestartInstace(string key)
         {
-            RunningInstance r = await this._runner.GetByRunningInstanceKeyAsync(key);
+            ExecutionInfo r = await _runner.GetByExecutionInfoKeyAsync(key);
             if (r == null) return BadRequest("Instance is not running");
 
             GameInstance instance = _servers.GetById(key);
-            if (instance == null) return NotFound(""); // TODO - description
+            if (instance == null) NotFound(key);
 
             await _runner.StopInstanceAsync(key);
             r = await _runner.StartInstanceAsync(r.Hostname, r.Port, instance);
-            return Ok(new ReturnDict
-            {
-                Key = key,
-                Save = instance,
-                Execution = r
-            });
+
+            instance.CurrentExecution = r;
+            return Ok(instance);
         }
 
         [HttpPost("{key}/stop")]
         public async Task<IActionResult> StopInstance(string key)
         {
-            RunningInstance r = await this._runner.GetByRunningInstanceKeyAsync(key);
+            ExecutionInfo r = await _runner.GetByExecutionInfoKeyAsync(key);
             if (r == null) return BadRequest("Instance is not running");
 
             await _runner.StopInstanceAsync(key);
-            return Ok(new ReturnDict
-            {
-                Key = key,
-                Save = _servers.GetById(key),
-                Execution = null
-            });
+            GameInstance g = _servers.GetById(key);
+            g.CurrentExecution = null;
+            return Ok(g);
         }
-    }
 
-    public class ReturnDict
-    {
-        public string Key { get; set; }
-        public GameInstance Save { get; set; }
-        public RunningInstance Execution { get; set; }
+        private IActionResult NotFound(string key)
+        {
+            return base.NotFound(string.Format("Instance identified by {0} not found", key));
+        }
     }
 }

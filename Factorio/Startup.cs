@@ -1,5 +1,6 @@
 using Factorio.Services.Execution.DockerImplementation;
 using Factorio.Services.Interfaces;
+using Factorio.Services.Persistence;
 using Factorio.Services.Persistence.LocalInstanceProvider;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -25,7 +26,8 @@ namespace Factorio
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
             // Created once per request
-            services.AddScoped<IInstanceProvider, LocalInstanceProvider>();
+            //services.AddScoped<IInstanceProvider, LocalInstanceProvider>();
+            services.AddScoped<IInstanceProvider, DockerBindInstanceProvider>();
             services.AddSingleton<IRunnerService, DockerRunnerService>();
 
             // In production, the React files will be served from this directory
@@ -34,7 +36,8 @@ namespace Factorio
                 configuration.RootPath = "ClientApp/build";
             });
 
-            services.Configure<LocalInstanceOptions>(Configuration);
+            //services.Configure<LocalInstanceOptions>(Configuration);
+            services.Configure<DockerBindInstanceOptions>(Configuration);
             services.Configure<DockerExecutionOptions>(Configuration);
         }
 

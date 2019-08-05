@@ -23,7 +23,11 @@ namespace Factorio.Test
             this._dockerClient = new DockerClientConfiguration(new Uri("npipe://./pipe/docker_engine")) // TODO - handle windows/linux
                     .CreateClient();
             
-            this._service = new DockerRunnerService(null);
+            this._service = new DockerRunnerService( Options.Create<DockerExecutionOptions>(new DockerExecutionOptions {
+                DockerUrl = "npipe://./pipe/docker_engine",
+                PortRangeBegin= 9990,
+                PortRangeEnd=10000
+            }));
           
         }
 

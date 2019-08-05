@@ -33,8 +33,9 @@ namespace Factorio.Services.Execution.DockerImplementation
                 Environment.OSVersion.Platform == PlatformID.Unix ?
                     "unix:/var/run/docker.sock" :
                     "npipe://./pipe/docker_engine";
+            string dockerURL = options != null ? options.Value.DockerUrl : null;
 
-            this._dockerClient = new DockerClientConfiguration(new Uri(options.Value.DockerUrl ?? defaultUrl)).CreateClient();
+            this._dockerClient = new DockerClientConfiguration(new Uri(dockerURL ?? defaultUrl)).CreateClient();
             this._portRangeStart = options.Value.PortRangeBegin;
             this._portRangeEnd = options.Value.PortRangeEnd;
         }

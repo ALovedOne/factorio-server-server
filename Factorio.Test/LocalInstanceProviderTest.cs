@@ -4,6 +4,7 @@ using Factorio.Services.Interfaces;
 using Factorio.Services.Persistence.LocalInstanceProvider;
 using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;
+using System.IO;
 using Xunit;
 
 namespace Factorio.Test
@@ -86,8 +87,8 @@ namespace Factorio.Test
             Assert.Equal(0, newServer.TargetVersion.Major);
             Assert.Equal(17, newServer.TargetVersion.Minor);
             Assert.Equal(20, newServer.TargetVersion.Patch);
-            // TODO
-            // Assert.Equal(Path.Combine(this.FullPath, "new-dir"), newServer.LocalPath);
+            Assert.Equal(Path.Combine(this.FullPath, "new-dir"), 
+                newServer.ImplementationInfo.GetValueOrDefault("localPath"));
         }
 
         [Fact]

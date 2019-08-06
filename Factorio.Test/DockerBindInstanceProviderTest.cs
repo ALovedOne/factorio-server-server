@@ -1,9 +1,12 @@
 ﻿using Factorio.Models;
 using Factorio.Services.Interfaces;
 using Factorio.Services.Persistence;
+using Microsoft.Extensions.Options;
 using System.Collections.Generic;
 using System.IO;
 using Xunit;
+using Moq;
+using Microsoft.Extensions.Logging;
 
 namespace Factorio.Test
 {
@@ -12,9 +15,11 @@ namespace Factorio.Test
         private readonly IInstanceProvider _instanceProvider;
         private static string RemoteDirectory = "C:\\Factorio";
 
-        public DockerBindInstanceProviderTest():base()
+        public DockerBindInstanceProviderTest() : base()
         {
-            this._instanceProvider = new DockerBindInstanceProvider(FullPath, RemoteDirectory);
+            IOptions<DockerBindInstanceOptions> options = Options.Create(new DockerBindInstanceOptions { BoundBaseDirectory = FullPath, HostBaseDirectory = RemoteDirectory });
+            ILogger<DockerBindInstanceProvider> logger = new Mock<ILogger<DockerBindInstanceProvider>>().Object;
+            this._instanceProvider = new DockerBindInstanceProvider(options, logger);
         }
 
         [Fact]

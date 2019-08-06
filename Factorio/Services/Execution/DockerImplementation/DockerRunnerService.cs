@@ -2,7 +2,6 @@
 using Docker.DotNet.Models;
 using Factorio.Models;
 using Factorio.Services.Interfaces;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -35,13 +34,14 @@ namespace Factorio.Services.Execution.DockerImplementation
                 Environment.OSVersion.Platform == PlatformID.Unix ?
                     "unix:/var/run/docker.sock" :
                     "npipe://./pipe/docker_engine";
-            string dockerURL = options != null ? options.Value.DockerUrl : null;
+            string dockerURL = options?.Value.DockerUrl;
 
             this._dockerClient = new DockerClientConfiguration(new Uri(dockerURL ?? defaultUrl)).CreateClient();
             this._portRangeStart = options.Value.PortRangeBegin;
             this._portRangeEnd = options.Value.PortRangeEnd;
 
             this._logger = logger;
+
             logger.LogInformation("Docker URL: {url} Port Range: {portStart} - {portEnd}", dockerURL ?? defaultUrl, this._portRangeStart, this._portRangeEnd);
         }
 
@@ -65,7 +65,11 @@ namespace Factorio.Services.Execution.DockerImplementation
             IList<ExecutionInfo> instances = await GetExecutionInfosFromDockerAsync(key);
 
             if (instances == null) return null;
-            if (instances.Count != 1) return null; // TODO - return something else maybe
+            if (instances.Count != 1)
+            {
+                _logger.LogWarning("Multiple keys for {ImageKey}", key);
+                return null;
+            }
 
             return instances[0];
         }
@@ -79,6 +83,7 @@ namespace Factorio.Services.Execution.DockerImplementation
             if (port < this._portRangeStart || port > this._portRangeEnd)
             {
                 // TODO - also check other instances (not trivial due to race condition)
+                this._logger.LogWarning("Port ({port}) out of range ({low} - {high})", port, this._portRangeStart, this._portRangeEnd);
                 throw new Exception("TODO - Invalid port");
             }
 
@@ -89,7 +94,7 @@ namespace Factorio.Services.Execution.DockerImplementation
 
             await this.LoadImageAsync(version);
             // TODO - handle invliad info
-            string newID = await this.StartImageAsync(instance.Key, port, instance.ImplementationInfo.GetValueOrDefault("localPath", ""), version);
+            string newID = await this.StartImageAsync(instance.Key, port, instance.ImplementationInfo.GetValueOrDefault("localPath"), version);
 
             ExecutionInfo i = new ExecutionInfo
             {
@@ -137,13 +142,11 @@ namespace Factorio.Services.Execution.DockerImplementation
 
         private async Task LoadImageAsync(string version)
         {
-
             await this._dockerClient.Images.CreateImageAsync(new ImagesCreateParameters
             {
                 FromImage = "factoriotools/factorio",
                 Tag = version
             }, new AuthConfig(), new ProgressSink());
-
         }
 
         /// <summary>
@@ -155,6 +158,8 @@ namespace Factorio.Services.Execution.DockerImplementation
         /// <returns></returns>
         private async Task<string> StartImageAsync(string key, int port, string sourcePath, string version)
         {
+            this._logger.LogInformation("Trying to start image {imageKey} {version} on {port} with {URL}", key, version, port, sourcePath);
+
             CreateContainerResponse newContainer = null;
             try
             {
@@ -183,9 +188,9 @@ namespace Factorio.Services.Execution.DockerImplementation
                     }
                 });
             }
-            catch (DockerApiException)
+            catch (DockerApiException e)
             {
-                throw new Exception("Failed to start instance TODO");
+                throw new Exception("Failed to start instance", e);
             }
 
 
@@ -236,8 +241,7 @@ namespace Factorio.Services.Execution.DockerImplementation
         private ExecutionInfo MapDockerContainer(ContainerListResponse containerInfo)
         {
             Port exposedPort = containerInfo.Ports.FirstOrDefault(p => p.PrivatePort == 34197);
-            string runningVersion;
-            TryGetImageVersion(containerInfo.ImageID, out runningVersion);
+            TryGetImageVersion(containerInfo.ImageID, out string runningVersion);
 
             return new ExecutionInfo
             {

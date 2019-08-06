@@ -20,8 +20,6 @@ namespace Factorio.Test
             InstancesController controller = new InstancesController(instanceProvider, executionProvider);
 
             IEnumerable<GameInstance> result = await controller.Get();
-
-            
         }
 
     }
@@ -64,10 +62,12 @@ namespace Factorio.Test
     class MockExecutionProvider : IRunnerService
     {
         private readonly IEnumerable<ExecutionInfo> _data;
+
         public MockExecutionProvider(IEnumerable<ExecutionInfo> mockData)
         {
             _data = mockData;
         }
+
         public async Task<ExecutionInfo> GetByExecutionInfoKeyAsync(string key)
         {
             return _data.FirstOrDefault(r => r.InstanceKey == key);

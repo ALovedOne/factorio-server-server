@@ -1,6 +1,7 @@
 ﻿using Factorio.Models;
 using Factorio.Persistence.Utils;
 using Factorio.Services.Interfaces;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Slugify;
 using System.Collections.Generic;
@@ -20,11 +21,13 @@ namespace Factorio.Services.Persistence
         // Static Config
         protected readonly DirectoryInfo _baseDirectory;
         private readonly ISlugHelper _slug;
+        private readonly ILogger _logger;
 
-        public AbstractFileSystemInstanceProvider(DirectoryInfo baseDir)
+        public AbstractFileSystemInstanceProvider(DirectoryInfo baseDir, ILogger logger)
         {
             _slug = new SlugHelper(new SlugHelper.Config());
             _baseDirectory = baseDir;
+            _logger = logger;
         }
 
         public abstract IReadOnlyDictionary<string, string> GetImplementationInfo(string key);
@@ -249,15 +252,14 @@ namespace Factorio.Services.Persistence
 
         private class ModFile
         {
-            public List<ModEntry> Mods;
+            public List<ModEntry> Mods = new List<ModEntry>();
         }
 
         private class ModEntry
         {
-            public string Name;
-            public bool Enabled;
+            public string Name = "";
+            public bool Enabled = true;
         }
         #endregion
-
     }
 }

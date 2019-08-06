@@ -49,13 +49,8 @@ namespace Factorio.Controllers
         public IActionResult Post([FromBody] GameInstance value)
         {
             if (_servers.TryAddServer(value, out string newId))
-            {
                 return Ok(newId);
-            }
-            else
-            {
-                return BadRequest();
-            }
+            return BadRequest();
         }
 
         [HttpPut("{key}")]
@@ -76,6 +71,7 @@ namespace Factorio.Controllers
             if (instance == null) return NotFound(key);
 
             r = await _runner.StartInstanceAsync("localhost", port, instance);
+            if (r == null) BadRequest();
             return Ok(r);
         }
 
@@ -90,6 +86,7 @@ namespace Factorio.Controllers
 
             await _runner.StopInstanceAsync(key);
             r = await _runner.StartInstanceAsync(r.Hostname, r.Port, instance);
+            if (r == null) return BadRequest();
 
             instance.CurrentExecution = r;
             return Ok(instance);

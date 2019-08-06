@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Collections.Generic;
 using System.IO;
 
@@ -9,15 +10,9 @@ namespace Factorio.Services.Persistence.LocalInstanceProvider
     public class LocalInstanceProvider : AbstractFileSystemInstanceProvider
     {
         #region ctor
-        public LocalInstanceProvider(IOptionsMonitor<LocalInstanceOptions> optionsAccessor) :
-            this(optionsAccessor.CurrentValue.BaseDirectory)
+        public LocalInstanceProvider(IOptions<LocalInstanceOptions> optionsAccessor, ILogger<LocalInstanceProvider> logger) :
+            base(new DirectoryInfo( optionsAccessor.Value.BaseDirectory), logger)
         {
-        }
-
-        public LocalInstanceProvider(string serverBaseDirectoryPath)
-            : base(new DirectoryInfo(serverBaseDirectoryPath))
-
-        {            
         }
         #endregion
 

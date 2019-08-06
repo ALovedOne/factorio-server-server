@@ -24,16 +24,8 @@ export class StartServer extends Component {
 
 
 
-        fetch("api/instances/" + this.state.imageKey + "/start", {
-            method: "POST",
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                port: this.state.port,
-                InstanceKey: this.state.imageKey,
-
-            })
+        fetch("api/instances/" + this.state.imageKey + "/start?port=" + this.state.port, {
+            method: "POST"
         })
             .then((data) => {
                 this.setState({ done: true });

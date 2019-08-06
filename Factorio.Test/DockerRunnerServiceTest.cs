@@ -3,7 +3,9 @@ using Docker.DotNet.Models;
 using Factorio.Models;
 using Factorio.Services.Execution.DockerImplementation;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Moq;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -19,18 +21,21 @@ namespace Factorio.Test
 
         public DockerRunnerServiceTest() : base()
         {
+            IOptions<DockerExecutionOptions> options = Options.Create<DockerExecutionOptions>(new DockerExecutionOptions
+            {
+                DockerUrl = "npipe://./pipe/docker_engine",
+                PortRangeBegin = 9990,
+                PortRangeEnd = 10000
+            });
 
+            ILogger<DockerRunnerService> logger = new Mock<ILogger<DockerRunnerService>>().Object;
             this._dockerClient = new DockerClientConfiguration(new Uri("npipe://./pipe/docker_engine")) // TODO - handle windows/linux
                     .CreateClient();
-            
-            this._service = new DockerRunnerService( Options.Create<DockerExecutionOptions>(new DockerExecutionOptions {
-                DockerUrl = "npipe://./pipe/docker_engine",
-                PortRangeBegin= 9990,
-                PortRangeEnd=10000
-            }));
-          
-        }
 
+            this._service = new DockerRunnerService(options, logger);
+
+        }
+        
         public new void Dispose()
         {
             Task killingContainers = this.KillAllDockerInstancesAsync();

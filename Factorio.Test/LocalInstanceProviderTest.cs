@@ -3,6 +3,9 @@ using Factorio.Persistence;
 using Factorio.Services.Interfaces;
 using Factorio.Services.Persistence.LocalInstanceProvider;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Moq;
 using System.Collections.Generic;
 using System.IO;
 using Xunit;
@@ -15,7 +18,9 @@ namespace Factorio.Test
 
         public LocalInstanceProviderTest() : base()
         {
-            this._instanceProvider = new LocalInstanceProvider(FullPath);
+            IOptions<LocalInstanceOptions> options = Options.Create(new LocalInstanceOptions { BaseDirectory = FullPath });
+            ILogger<LocalInstanceProvider> logger = new Mock<ILogger<LocalInstanceProvider>>().Object;
+            this._instanceProvider = new LocalInstanceProvider(options, logger);
         }
 
         [Fact]
@@ -87,7 +92,7 @@ namespace Factorio.Test
             Assert.Equal(0, newServer.TargetVersion.Major);
             Assert.Equal(17, newServer.TargetVersion.Minor);
             Assert.Equal(20, newServer.TargetVersion.Patch);
-            Assert.Equal(Path.Combine(this.FullPath, "new-dir"), 
+            Assert.Equal(Path.Combine(this.FullPath, "new-dir"),
                 newServer.ImplementationInfo.GetValueOrDefault("localPath"));
         }
 

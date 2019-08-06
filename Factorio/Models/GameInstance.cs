@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Factorio.Models
 {
@@ -10,18 +11,14 @@ namespace Factorio.Models
         public string Name { get; set; }
         public string Description { get; set; }
         public FuzzyVersion TargetVersion { get; set; }
-        
+
         // From mods directory
         public IEnumerable<Mod> Mods { get; set; }
 
         // From saves directory
         public GameSave LastSave { get; set; }
-        // TODO:
-        //  - preview.jpg
 
-        public IReadOnlyDictionary<string, string> ImplementationInfo { get; set; }
-
-
+        public IReadOnlyDictionary<string,string> ImplementationInfo { get; set; }
         public ExecutionInfo CurrentExecution { get; set; }
 
         public bool Valid

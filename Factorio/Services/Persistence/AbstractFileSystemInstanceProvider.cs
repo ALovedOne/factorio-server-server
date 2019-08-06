@@ -122,28 +122,21 @@ namespace Factorio.Services.Persistence
         }
 
         #region Loading Servers
+        /// <summary>
+        /// Load a single directory from server-info.json or a default
+        /// </summary>
+        /// <param name="d"></param>
+        /// <returns></returns>
         private GameInstance LoadSingleDirectory(DirectoryInfo d)
         {
             GameSave lastSave = LoadActiveSave(d);
             IList<Mod> modList = LoadModList(d);
 
+            GameInstance gameInfo = GetServerInstanceFromFile(d) ?? LoadEmptyServer(d);
+            gameInfo.LastSave = lastSave;
+            gameInfo.Mods = modList;
 
-            GameInstance ret;
-
-            FileInfo gameInfo = GetServerInfo(d);
-            if (gameInfo != null)
-            {
-                ret = LoadServerFieldsFromJSON(gameInfo);
-            }
-            else
-            {
-                ret = LoadEmptyServer(d);
-            }
-
-            ret.LastSave = lastSave;
-            ret.Mods = modList;
-
-            return ret;
+            return gameInfo;
         }
 
         private IList<Mod> LoadModList(DirectoryInfo d)
@@ -198,21 +191,33 @@ namespace Factorio.Services.Persistence
             return null;
         }
 
-        /// <summary>
-        /// Given a game directory, returns the server-info.json file loaded
-        /// </summary>
-        /// <param name="d">Directory of the game containing the saves, mods, and more</param>
-        /// <returns>The FileInfo of the server-info.json file</returns>
-        private static FileInfo GetServerInfo(DirectoryInfo d)
+        private GameInstance GetServerInstanceFromFile(DirectoryInfo d)
         {
             FileInfo[] file = d.GetFiles(SERVER_INFO_FILE_NAME);
-            if (file.Length > 0)
-            {
-                return file[0];
-            }
-            return null;
-        }
+            if (file.Length != 1)
+                return null;
 
+            FileInfo serverInfoFile = file[0];
+            using (StreamReader r = new StreamReader(serverInfoFile.FullName))
+            {
+                ServerInfoFile sInfo = JsonConvert.DeserializeObject<ServerInfoFile>(r.ReadToEnd());
+                if (sInfo == null) return null;
+
+                return new GameInstance
+                {
+                    Key = serverInfoFile.Directory.Name,
+                    Name = sInfo.Name,
+                    Description = sInfo.Description,
+                    TargetVersion = new FuzzyVersion
+                    {
+                        Major = sInfo.MajorVersion.GetValueOrDefault(0),
+                        Minor = sInfo.MinorVersion.GetValueOrDefault(17),
+                        Patch = sInfo.PatchVersion
+                    },
+                    ImplementationInfo = GetImplementationInfo(serverInfoFile.Directory.Name)
+                };
+            }
+        }
 
         /// <summary>
         /// Creates a blank Server object based on the directory
@@ -225,40 +230,9 @@ namespace Factorio.Services.Persistence
             {
                 Key = serverFolder.Name,
                 Name = serverFolder.Name,
+                TargetVersion = new FuzzyVersion { Major = 0, Minor = 17, Patch = null },
                 Description = "",
                 ImplementationInfo = GetImplementationInfo(serverFolder.Name)
-            };
-        }
-
-        /// <summary>
-        /// Loads fields it can from the server-info.json file
-        /// </summary>
-        /// <param name="file">The server-info.json file</param>
-        /// <param name="s">The output server object</param>
-        private GameInstance LoadServerFieldsFromJSON(FileInfo serverInfoFile)
-        {
-
-            ServerInfoFile sInfo = null;
-            using (StreamReader r = new StreamReader(serverInfoFile.FullName))
-            {
-                sInfo = JsonConvert.DeserializeObject<ServerInfoFile>(r.ReadToEnd());
-            }
-            if (sInfo == null)
-            {
-                return null; // TODO
-            }
-            return new GameInstance
-            {
-                Key = serverInfoFile.Directory.Name,
-                Name = sInfo.Name,
-                Description = sInfo.Description,
-                TargetVersion = new FuzzyVersion
-                {
-                    Major = sInfo.MajorVersion.GetValueOrDefault(0),
-                    Minor = sInfo.MinorVersion.GetValueOrDefault(17),
-                    Patch = sInfo.PatchVersion
-                },
-                ImplementationInfo = GetImplementationInfo(serverInfoFile.Directory.Name)
             };
         }
         #endregion

@@ -20,7 +20,7 @@ export class EditServer extends Component {
                 });
         } else {
             this.state = {
-                id: id, loading: false, done: false, server: {}
+                id: id, loading: false, done: false, server: { targetVersion: {} }
             };
         }
     }
@@ -34,7 +34,6 @@ export class EditServer extends Component {
         const url = id ? `api/instances/${id}` : `api/instances`;
         const method = id ? 'PUT' : 'POST';
 
-
         fetch(url, {
             method: method,
             headers: {
@@ -47,10 +46,7 @@ export class EditServer extends Component {
             });
     }
 
-    handleInputChange(event, name) {
-        const target = event.target;
-        const value = event.type === 'checkbox' ? target.checked : target.value;
-
+    handleInputChange(name, value) {
         const server = Object.assign({}, this.state.server, { [name]: value });
         // Partial update
         this.setState({
@@ -69,7 +65,7 @@ export class EditServer extends Component {
                         <Form.Control
                             type="text"
                             value={server.name}
-                            onChange={(event) => this.handleInputChange(event, "name")}
+                            onChange={(event) => this.handleInputChange("name", event.target.value)}
                         />
                     </Form.Group>
                     <Form.Group controlId="frmEditServer">
@@ -77,25 +73,12 @@ export class EditServer extends Component {
                         <Form.Control
                             type="text"
                             value={server.description}
-                            onChange={(event) => this.handleInputChange(event, "description")}
+                            onChange={(event) => this.handleInputChange("description", event.target.value)}
                         />
                     </Form.Group>
-                    <Form.Control
-                        placeholder="major"
-                        value={server.targetMajorVersion}
-                        onChange={(event) => this.handleInputChange(event, "targetMajorVersion")}
-                    />
-                    <Form.Control
-                        placeholder="minor"
-                        value={server.targetMinorVersion}
-                        onChange={(event) => this.handleInputChange(event, "targetMinorVersion")}
-                        disabled={server.targetMajorVersion == null}
-                    />
-                    <Form.Control
-                        placeholder="patch"
-                        value={server.targetPatchVersion}
-                        onChange={(event) => this.handleInputChange(event, "targetPatchVersion")}
-                        disabled={server.targetMinorVersion == null}
+                    <VersionEditor
+                        version={server.targetVersion}
+                        onChange={(event, version) => this.handleInputChange("targetVersion", version)}
                     />
 
                     <Button
@@ -126,5 +109,37 @@ export class EditServer extends Component {
                 {content}
             </div>
         );
+    }
+}
+
+class VersionEditor extends Component {
+    handleInputChange(event, field) {
+        var newVersion = Object.assign({}, this.props.version, { [field]: event.target.value });
+        this.props.onChange(event, newVersion);
+    }
+
+    render() {
+        let props = this.props;
+
+        return < Form.Group >
+            <Form.Label>Target Version</Form.Label>
+            <Form.Control
+                placeholder="major"
+                value={props.version.major}
+                onChange={(event) => this.handleInputChange(event, "major")}
+            />
+            <Form.Control
+                placeholder="minor"
+                value={props.version.minor}
+                onChange={(event) => this.handleInputChange(event, "minor")}
+                disabled={props.version.major == null}
+            />
+            <Form.Control
+                placeholder="patch"
+                value={props.version.patch}
+                onChange={(event) => this.handleInputChange(event, "patch")}
+                disabled={props.version.minor == null}
+            />
+        </Form.Group >;
     }
 }

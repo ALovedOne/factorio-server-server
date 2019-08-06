@@ -3,6 +3,7 @@ using Docker.DotNet.Models;
 using Factorio.Models;
 using Factorio.Services.Interfaces;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Concurrent;
@@ -21,13 +22,14 @@ namespace Factorio.Services.Execution.DockerImplementation
         private readonly DockerClient _dockerClient;
         private readonly int _portRangeStart;
         private readonly int _portRangeEnd;
+        private readonly ILogger _logger;
 
 
         /*
          * Adding pre-emtive port checking
          *   - Add dictionary, lock dict, check port, if valid add, unlock, try to start, if fails, remove, when stopped remove
          */
-        public DockerRunnerService(IOptions<DockerExecutionOptions> options)
+        public DockerRunnerService(IOptions<DockerExecutionOptions> options, ILogger<DockerRunnerService> logger)
         {
             string defaultUrl =
                 Environment.OSVersion.Platform == PlatformID.Unix ?
@@ -38,6 +40,9 @@ namespace Factorio.Services.Execution.DockerImplementation
             this._dockerClient = new DockerClientConfiguration(new Uri(dockerURL ?? defaultUrl)).CreateClient();
             this._portRangeStart = options.Value.PortRangeBegin;
             this._portRangeEnd = options.Value.PortRangeEnd;
+
+            this._logger = logger;
+            logger.LogInformation("Docker URL: {url} Port Range: {portStart} - {portEnd}", dockerURL ?? defaultUrl, this._portRangeStart, this._portRangeEnd);
         }
 
         #region Getters

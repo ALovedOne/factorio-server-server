@@ -1,0 +1,26 @@
+sudo: required
+services:
+  - docker
+env:
+  global:
+    - IMAGE_NAME=alovedone/factorio-server-server   
+    - REGISTRY_USER=ALovedOne
+    # REGISTRY_PASS=....
+    - secure: "mvTijFoU6vOW6sJBcDbhvAtBtULVwMYgKrcgj3p3ENJEBZeEiWgKAG0FDntbMv4Gb+m2QrX3rAyIQs1DBRamIVkxqF0H7ijZTfMMP16mDwBIYWm7d84YAsbbNOLCzlJBad6QIUbjV8PS0OKZAw5PM1MMPqjBHXxP8Ycw3sYxR0cPDsXN2l0rveiGa7ELP9FfPVUkO+pM6xZ7ypMOiX7QXHYmo38CC0AaMSLNr0XKAUq+A4osVEfCJmznnZ5klXmD4TWSFSSwvWaUTpzevYo2F+lsbA5Py97t0H3rm3y9mxdLREQFkqPcJDS7ZgJgyGQ17s5cpAY+MKUVB/lFbhmLD64YotAQh85PGAArByrMMuUCb4n/2XGtbdRyGqCAIZa2Z5vpWdEwVrXgh9h2IknOoPJgCMU+fpCk8UtFJoyP/PE7zAZUDlTP2Ko6w4+Il410kL372Hzd+Bos9Qo2S4LvMCkflr7WAOFKMCSICVu8VX+7codNAVFzRRXrkdd9VqNEPO5OkSlbMJhFnlBRm6QfZD9Fyg1EKNHtRoHfBzEnkBLzvVp3zSp4WT5XOYunVrtKYOtZb/Cv83jnHmCyZ51KmVK3D9whmjzWYkwHK/9gF8ZaBTZsYv56JLPDkLC5v+07HFPyJ8ARnLTDz+qVEqZ3dWNz7vH34vQlazOwbYqzLh4="
+before_script:
+  - version="$(awk '$2 == "VERSION" { print $3; exit }' ./Factorio/Dockerfile)"
+script:
+  - docker pull "$IMAGE_NAME" || true
+  - docker build --pull --cache-from "$IMAGE_NAME" --tag "$IMAGE_NAME" ./Factorio/
+after_script:
+  - docker images
+  
+before_deploy:
+  - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASS"
+  - docker tag "$IMAGE_NAME" "${IMAGE_NAME}:latest"
+  - docker tag "$IMAGE_NAME" "${IMAGE_NAME}:${version}"
+deploy:
+  provider: script
+  script: docker push "${IMAGE_NAME}:latest" && docker push "${IMAGE_NAME}:${version}"
+  on:
+    branch: master

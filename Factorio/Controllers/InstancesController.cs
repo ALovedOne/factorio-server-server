@@ -48,15 +48,19 @@ namespace Factorio.Controllers
         [HttpPost]
         public IActionResult Post([FromBody] GameInstance value)
         {
-            if (_servers.TryAddServer(value, out string newId))
-                return Ok(newId);
+            GameInstance newInstance = _servers.TryAddServer(value);
+            if (newInstance != null)
+                return Ok(newInstance);
             return BadRequest();
         }
 
         [HttpPut("{key}")]
-        public void Put(string key, [FromBody] GameInstance value)
+        public IActionResult Put(string key, [FromBody] GameInstance value)
         {
-            _servers.UpdateServer(key, value);
+            GameInstance updateInstance = _servers.UpdateServer(value);
+            if (updateInstance == null)
+                return BadRequest("TODO - something went wrong");
+            return Ok(updateInstance);
         }
 
 
@@ -72,7 +76,9 @@ namespace Factorio.Controllers
 
             r = await _runner.StartInstanceAsync("localhost", port, instance);
             if (r == null) BadRequest();
-            return Ok(r);
+
+            instance.CurrentExecution = r;
+            return Ok(instance);
         }
 
         [HttpPost("{key}/restart")]

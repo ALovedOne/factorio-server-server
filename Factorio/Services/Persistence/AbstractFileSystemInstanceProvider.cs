@@ -64,15 +64,14 @@ namespace Factorio.Services.Persistence
             return d.Exists;
         }
 
-        public bool TryAddServer(GameInstance newServer, out string newId)
+        public GameInstance TryAddServer(GameInstance newServer)
         {
-            newId = _slug.GenerateSlug(newServer.Name);
+            string newId = _slug.GenerateSlug(newServer.Name);
 
             // verify uniqueness of slug
             if (IdExists(newId))
             {
-                newId = "";
-                return false;
+                return null;
             }
 
             DirectoryInfo newDirectory = _baseDirectory.CreateSubdirectory(newId);
@@ -90,19 +89,21 @@ namespace Factorio.Services.Persistence
                 };
                 w.Write(JsonConvert.SerializeObject(sInfo));
             }
+            // TODO -create folders structure
 
-            return true;
+            // Just reload, ignore the performance hit
+            return GetById(newId); ;
         }
 
-        public void UpdateServer(string slug, GameInstance value)
+        public GameInstance UpdateServer(GameInstance value)
         {
             // TODO - write to file system and update environments
-            DirectoryInfo d = GetServerDirectory(slug);
+            DirectoryInfo d = GetServerDirectory(value.Key);
 
             if (!d.Exists)
             {
                 // TODO - Error
-                return;
+                return null;
             }
 
             using (StreamWriter w = new StreamWriter(Path.Combine(d.FullName, SERVER_INFO_FILE_NAME)))
@@ -113,10 +114,13 @@ namespace Factorio.Services.Persistence
                     Description = value.Description,
                     MajorVersion = value.TargetVersion.Major,
                     MinorVersion = value.TargetVersion.Minor,
-                    PatchVersion = value.TargetVersion.Patch
+                    PatchVersion = value.TargetVersion.Patch,
+                    Mods = value.Mods
                 };
                 w.Write(JsonConvert.SerializeObject(sInfo));
             }
+
+            return GetById(value.Key);
         }
 
         private DirectoryInfo GetServerDirectory(string slug)
@@ -133,22 +137,22 @@ namespace Factorio.Services.Persistence
         private GameInstance LoadSingleDirectory(DirectoryInfo d)
         {
             GameSave lastSave = LoadActiveSave(d);
-            IList<Mod> modList = LoadModList(d);
+            IList<TargetMod> modFolderList = LoadModModsFolderList(d);
 
             GameInstance gameInfo = GetServerInstanceFromFile(d) ?? LoadEmptyServer(d);
             gameInfo.LastSave = lastSave;
-            gameInfo.Mods = modList;
+
+            // First defined, 
+            gameInfo.Mods = gameInfo.Mods ?? modFolderList ?? lastSave?.Mods.Select(m => (TargetMod)m);
 
             return gameInfo;
         }
 
-        private IList<Mod> LoadModList(DirectoryInfo d)
+        private IList<TargetMod> LoadModModsFolderList(DirectoryInfo d)
         {
-            List<Mod> ret = new List<Mod>();
-
             DirectoryInfo modsDir = d.EnumerateDirectories("mods").FirstOrDefault();
-            if (modsDir == null) return new List<Mod>();
-            return new List<Mod>(modsDir.EnumerateFiles("*.zip").Select<FileInfo, Mod>(modZip =>
+            if (modsDir == null) return new List<TargetMod>();
+            return new List<TargetMod>(modsDir.EnumerateFiles("*.zip").Select<FileInfo, TargetMod>(modZip =>
             {
                 Match regexMathc = MOD_ZIP_REGEX.Match(modZip.Name);
                 string modName = regexMathc.Groups[1].Value;
@@ -156,10 +160,10 @@ namespace Factorio.Services.Persistence
                 string minorVersion = regexMathc.Groups[3].Value;
                 string patchVersion = regexMathc.Groups[4].Value;
 
-                return new Mod
+                return new TargetMod
                 {
                     Name = modName,
-                    Version = new SpecificVersion
+                    TargetVersion = new FuzzyVersion
                     {
                         Major = byte.Parse(majorVersion),
                         Minor = byte.Parse(minorVersion),
@@ -217,6 +221,7 @@ namespace Factorio.Services.Persistence
                         Minor = sInfo.MinorVersion.GetValueOrDefault(17),
                         Patch = sInfo.PatchVersion
                     },
+                    Mods = sInfo.Mods,
                     ImplementationInfo = GetImplementationInfo(serverInfoFile.Directory.Name)
                 };
             }
@@ -248,6 +253,7 @@ namespace Factorio.Services.Persistence
             public int? MajorVersion;
             public int? MinorVersion;
             public int? PatchVersion;
+            public IEnumerable<TargetMod> Mods;
         }
 
         private class ModFile

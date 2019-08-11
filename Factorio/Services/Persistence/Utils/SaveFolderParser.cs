@@ -11,7 +11,7 @@ namespace Factorio.Persistence.Utils
         public static GameSave ParserZipFile(FileInfo fileName)
         {
             int majorVersion, minorVersion, patchVersion;
-            List<Mod> modList = new List<Mod>();
+            List<SpecificMod> modList = new List<SpecificMod>();
 
             using (ZipArchive zip = ZipFile.OpenRead(fileName.FullName))
             {
@@ -31,7 +31,7 @@ namespace Factorio.Persistence.Utils
                         r.ReadInt16(); // Unknown 2 bytes, difficulty?
                         r.ReadString();
 
-                        Mod baseMod = ReadMod17(r);
+                        SpecificMod baseMod = ReadMod17(r);
 
                         r.ReadBytes(7);
 
@@ -47,12 +47,12 @@ namespace Factorio.Persistence.Utils
             return new GameSave(majorVersion, minorVersion, patchVersion, modList);
         }
 
-        private static Mod ReadMod17(BinaryReader r)
+        private static SpecificMod ReadMod17(BinaryReader r)
         {
             string name = r.ReadString();
             byte[] version = r.ReadBytes(3);
             r.ReadBytes(4);
-            return new Mod
+            return new SpecificMod
             {
                 Name = name,
                 Version = new SpecificVersion(version[0], version[1], version[2])

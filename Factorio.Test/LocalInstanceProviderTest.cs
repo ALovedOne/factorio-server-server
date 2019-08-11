@@ -61,19 +61,19 @@ namespace Factorio.Test
         {
             this.AddBlankDir("existing-dir");
 
-            Assert.False(this._instanceProvider.TryAddServer(new GameInstance
+            GameInstance newInstance = this._instanceProvider.TryAddServer(new GameInstance
             {
                 Name = "Existing Dir"
-            }, out string newId));
+            });
 
-            Assert.Equal("", newId);
+            Assert.Null(newInstance);
         }
 
         [Fact]
         public void TestTryAddServerSuccessfully()
         {
             this.AddBlankDir("existing_dir");
-            Assert.True(this._instanceProvider.TryAddServer(new GameInstance
+            GameInstance newInstance = this._instanceProvider.TryAddServer(new GameInstance
             {
                 Description = "New Description",
                 Name = "New Dir",
@@ -83,17 +83,17 @@ namespace Factorio.Test
                     Minor = 17,
                     Patch = 20
                 }
-            }, out string newId));
-            Assert.Equal("new-dir", newId);
+            });
+            Assert.NotNull(newInstance);
+            Assert.Equal("new-dir", newInstance.Key);
 
-            GameInstance newServer = this._instanceProvider.GetById(newId);
-            Assert.Equal("New Description", newServer.Description);
-            Assert.Equal("New Dir", newServer.Name);
-            Assert.Equal(0, newServer.TargetVersion.Major);
-            Assert.Equal(17, newServer.TargetVersion.Minor);
-            Assert.Equal(20, newServer.TargetVersion.Patch);
+            Assert.Equal("New Description", newInstance.Description);
+            Assert.Equal("New Dir", newInstance.Name);
+            Assert.Equal(0, newInstance.TargetVersion.Major);
+            Assert.Equal(17, newInstance.TargetVersion.Minor);
+            Assert.Equal(20, newInstance.TargetVersion.Patch);
             Assert.Equal(Path.Combine(this.FullPath, "new-dir"),
-                newServer.ImplementationInfo.GetValueOrDefault("localPath"));
+                newInstance.ImplementationInfo.GetValueOrDefault("localPath"));
         }
 
         [Fact]
@@ -102,12 +102,13 @@ namespace Factorio.Test
             const string newServerName = "New Server Name";
             const string newServerDescription = "New Server Description";
             GameInstance game = this.AddTestSave("save_17_50");
+            GameInstance desciredState = new GameInstance { Key = "save_17_50", Name = newServerName, Description = newServerDescription, TargetVersion = game.TargetVersion };
 
-            this._instanceProvider.UpdateServer("save_17_50", new GameInstance { Name = newServerName, Description = newServerDescription, TargetVersion = game.TargetVersion });
-            GameInstance testInstance = this._instanceProvider.GetById("save_17_50");
+            GameInstance updatedGame = this._instanceProvider.UpdateServer(desciredState);
+            Assert.NotNull(updatedGame);
 
-            Assert.Equal(newServerName, testInstance.Name);
-            Assert.Equal(newServerDescription, testInstance.Description);
+            Assert.Equal(newServerName, updatedGame.Name);
+            Assert.Equal(newServerDescription, updatedGame.Description);
         }
 
         [Fact]

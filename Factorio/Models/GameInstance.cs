@@ -1,10 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Factorio.Models
 {
     public class GameInstance
     {
+        public GameInstance()
+        {
+            TargetVersion = new FuzzyVersion();
+            Mods = new List<TargetMod>();
+        }
+
         public string Key { get; set; }
 
         // From server-info.json
@@ -12,13 +19,13 @@ namespace Factorio.Models
         public string Description { get; set; }
         public FuzzyVersion TargetVersion { get; set; }
 
-        // From mods directory
-        public IEnumerable<Mod> Mods { get; set; }
+        // From mods directory, config
+        public IEnumerable<TargetMod> Mods { get; set; }
 
         // From saves directory
         public GameSave LastSave { get; set; }
 
-        public IReadOnlyDictionary<string,string> ImplementationInfo { get; set; }
+        public IReadOnlyDictionary<string, string> ImplementationInfo { get; set; }
         public ExecutionInfo CurrentExecution { get; set; }
 
         public bool Valid
@@ -26,7 +33,7 @@ namespace Factorio.Models
             get
             {
                 if (!VersionValid) return false;
-                // TODO - check mod versions
+                if (!ModsValid) return false;
                 return true;
             }
         }
@@ -39,6 +46,25 @@ namespace Factorio.Models
                 return true;
             }
 
+        }
+
+        private bool ModsValid
+        {
+            get
+            {
+                if (this.LastSave == null) return true;
+
+                IDictionary<string, TargetMod> desiredMods = this.Mods.ToDictionary(m => m.Name);
+                IDictionary<string, SpecificMod> installedMods = this.LastSave.Mods.ToDictionary(m => m.Name);
+
+                // Can't remove mods
+                if (installedMods.Keys.Except(desiredMods.Keys).Any()) return false;
+
+                // Can't downgrade mods
+                if (installedMods.All(installed => desiredMods.TryGetValue(installed.Key, out TargetMod desired) && installed.Value.Version <= desired.TargetVersion)) return false;
+
+                return true;
+            }
         }
     }
 
@@ -67,19 +93,27 @@ namespace Factorio.Models
     {
         public SpecificVersion Version { get; }
 
-        public IList<Mod> Mods { get; }
+        public IList<SpecificMod> Mods { get; }
 
-        public GameSave(int MajorVersion, int MinorVersion, int PatchVersion, IList<Mod> mods = null)
+        public GameSave(int MajorVersion, int MinorVersion, int PatchVersion, IList<SpecificMod> mods = null)
         {
             this.Version = new SpecificVersion(MajorVersion, MinorVersion, PatchVersion);
-            this.Mods = mods ?? new List<Mod>();
+            this.Mods = mods ?? new List<SpecificMod>();
         }
     }
 
-    public class Mod
+    public class TargetMod
+    {
+        public string Name { get; set; }
+        public FuzzyVersion TargetVersion { get; set; }
+    }
+
+    public class SpecificMod
     {
         public string Name { get; set; }
         public SpecificVersion Version { get; set; }
+
+        public static implicit operator TargetMod(SpecificMod m) => new TargetMod { Name = m.Name, TargetVersion = m.Version };
     }
 
     #region Versions
@@ -112,6 +146,8 @@ namespace Factorio.Models
         protected override int _Major => Major;
         protected override int _Minor => Minor;
         protected override int? _Patch => Patch;
+
+        public static implicit operator FuzzyVersion(SpecificVersion v) => new FuzzyVersion { Major = v.Major, Minor = v.Minor, Patch = v.Patch };
     }
 
     public abstract class Version

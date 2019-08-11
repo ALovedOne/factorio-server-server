@@ -48,12 +48,12 @@ namespace Factorio.Test
             return this.GetById(key) != null;
         }
 
-        public bool TryAddServer(GameInstance value, out string newId)
+        public GameInstance TryAddServer(GameInstance value)
         {
             throw new NotImplementedException();
         }
 
-        public void UpdateServer(string key, GameInstance value)
+        public GameInstance UpdateServer(GameInstance value)
         {
             throw new NotImplementedException();
         }

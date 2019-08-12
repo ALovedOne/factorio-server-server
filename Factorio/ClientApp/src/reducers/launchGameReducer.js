@@ -1,33 +1,31 @@
-﻿import * as actionTypes from '../actions/actionType';
+﻿import { LAUNCHING_GAME_BEGIN, LAUNCHING_GAME_ABORT, LAUNCHING_GAME_UPDATE_INFO, LAUNCHING_GAME_IN_PROGRESS, LAUNCHING_GANE_DONE } from "../actions/actionType";
 
-const LAUNCHING_GAME_BEGIN = "LAUNCHING_GAME_BEGIN";
-const LAUNCHING_GAME_ABORT = "LAUNCHING_GAME_ABORT";
-const UPDATE_LAUNCHING_PORT = "UPDATE_LAUNCHING_PORT";
 
 const initialState = {
     launchingGame: null,
-    port: null
+    info: {}
 }
 
-export default function launchingGameReducer(state, action) {
-    if (typeof state === 'undefined') {
-        return initialState;
-    }
+export default function launchingGameReducer(oldState = initialState, action) {
 
     if (action.type === LAUNCHING_GAME_BEGIN) {
-        return Object.assign({}, state, { launchingGame: action.game });
+        return Object.assign({}, oldState, { launchingGame: action.game });
     }
 
-    if (action.type === actionTypes.LAUNCHING_GAME_ABORT) {
+    if (action.type === LAUNCHING_GAME_ABORT) {
         return initialState;
     }
 
-    if (action.type === actionTypes.UPDATE_LAUNCHING_PORT) {
-        return Object.assign({}, state, { port: action.port });
+    if (action.type === LAUNCHING_GAME_UPDATE_INFO) {
+        return Object.assign({}, oldState, {
+            info: {
+                port: action.info.port || oldState.info.port,
+            }
+        });
     }
 
-
-
-    // debugger;
-    return state;
+    if (action.type === LAUNCHING_GANE_DONE) {
+        return initialState;
+    }
+    return oldState;
 }

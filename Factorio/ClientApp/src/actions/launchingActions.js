@@ -1,65 +1,24 @@
-﻿import { LAUNCHING_GAME_ABORT, LAUNCHING_GAME_BEGIN, STARTING_GAME, UPDATE_GAME_INFO, UPDATE_LAUNCHING_PORT } from "./actionType";
+﻿import * as gameInstanceService from '../services/gameInstances';
+import { LAUNCHING_GAME_BEGIN, LAUNCHING_GAME_ABORT, LAUNCHING_GAME_UPDATE_INFO, LAUNCHING_GAME_IN_PROGRESS, LAUNCHING_GANE_DONE } from "./actionType";
 
-export function beginStartingGame(gameKey) {
-    return {
-        type: STARTING_GAME,
-        gameKey: gameKey
-    };
-}
+/*
+ * 1) beginStartingGame -> bring up form
+ * 2) updateLaunchingInfo -> update with launch info
+ * x) abortLaunching -> bring down form
+ * 3) initiateStartingGame -> 
+ *      - updates state to show progress
+ *      - Make call to start
+ * 4) restartGame,
+ *      - bring up progressbar
+ *      - make call to restart
+ * 5) stopGame,
+ *      - bring up progressbar
+ *      - make call to stop...
+ * *) in callbacks,
+ *      - disable progress bar
+ *      - update game list state
+ */
 
-export function startGame(game, port) {
-    return dispatch => {
-        dispatch(beginStartingGame({ gameKey: game.key }));
-        fetch("api/instances/" + game.key + "/start?port=" + port, {
-            method: "POST"
-        })
-            .then((resp) => resp.json())
-            .then((data) => {
-                dispatch(endStartingStoppingGame(game.key, data));
-            });
-    }
-}
-
-export function stopGame(game) {
-
-    return dispatch => {
-        dispatch(beginStartingGame({ gameKey: game.key }));
-        fetch("api/instances/" + game.key + "/stop", {
-            method: "POST"
-        })
-            .then((resp) => resp.json())
-            .then((data) => {
-                dispatch(endStartingStoppingGame(game.key, data));
-            });
-    }
-}
-
-
-export function restartGame(game) {
-    return dispatch => {
-        // TODO - initial update
-        dispatch(beginStartingGame({ gameKey: game.key }));
-        fetch("api/instances/" + game.key + "/restart", {
-            method: "POST"
-        })
-            .then((resp) => resp.json())
-            .then((data) => {
-                dispatch(endStartingStoppingGame(game.key, data));
-            });
-    }
-}
-
-
-function endStartingStoppingGame(gameKey, newGameInfo) {
-    console.assert(newGameInfo);
-    return {
-        type: UPDATE_GAME_INFO,
-        gameKey: gameKey,
-        gameInfo: newGameInfo
-    };
-}
-
-//#region Launching Game
 export function beginLaunchingGame(game) {
     return {
         type: LAUNCHING_GAME_BEGIN,
@@ -67,18 +26,55 @@ export function beginLaunchingGame(game) {
     };
 }
 
+export function updateLaunchingGameInfo(game, port) {
+    return {
+        type: LAUNCHING_GAME_UPDATE_INFO,
+        game: game,
+        info: { port }
+    }
+}
+
 export function abortLaunchingGame(game) {
     return {
         type: LAUNCHING_GAME_ABORT,
         game: game
-    };
+    }
 }
 
-export function updateLaunchingPort(game, port) {
-    return {
-        type: UPDATE_LAUNCHING_PORT,
-        game: game,
-        port: port
-    };
+export function initiateStartingGame(game, info) {
+    return dispatch => {
+        dispatch(launchingGameInProgress(game));
+        gameInstanceService.requestStartGame(game, info.port)
+            .then((updatedGameModel) => dispatch(launchingGameDone(updatedGameModel)));
+    }
 }
-//#endregion
+
+export function restartGame(game) {
+    return dispatch => {
+        dispatch(launchingGameInProgress(game));
+        gameInstanceService.requestRestartGame(game)
+            .then((updatedGameModel) => dispatch(launchingGameDone(updatedGameModel)));
+    }
+}
+
+export function stopGame(game) {
+    return dispatch => {
+        dispatch(launchingGameInProgress(game));
+        gameInstanceService.requestStopGame(game)
+            .then((updatedGameModel) => dispatch(launchingGameDone(updatedGameModel)));
+    }
+}
+
+function launchingGameDone(game) {
+    return {
+        type: LAUNCHING_GANE_DONE,
+        game: game
+    }
+}
+
+function launchingGameInProgress(game) {
+    return {
+        type: LAUNCHING_GAME_IN_PROGRESS,
+        game: game
+    }
+}

@@ -1,6 +1,5 @@
-﻿import { EDITING_BEGIN_SAVING, EDITING_DONE_SAVING, EDITING_GAME_ABORT, EDITING_GAME_BEGIN, EDITING_GAME_VALUE_CHANGE, EDITING_GAME_MOD_VALUE_CHANGE} from "./actionType";
-import { onLoadingSuccess } from './index';
-
+﻿import { EDITING_BEGIN_SAVING, EDITING_DONE_SAVING, EDITING_GAME_ABORT, EDITING_GAME_BEGIN, EDITING_GAME_VALUE_CHANGE } from "./actionType";
+import { requestSaveGame } from '../services/gameInstances';
 
 // Bring up the editing form
 export function beginEditingGame(game) {
@@ -28,24 +27,12 @@ export function onEditingGameChange(field, value) {
 
 export function editingGameSaveChanges(game) {
     return dispatch => {
-
-        const url = game.key ? `api/instances/${game.key}` : `api/instances`;
-        const method = game.key ? 'PUT' : 'POST';
-
         dispatch(beginSavingGame());
-        fetch(url, {
-            method: method,
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(game)
-        })
-            .then(response => response.json())
-            .then((data) => {
-                dispatch(onLoadingSuccess(data));
-                dispatch(doneSavingGame());
-            });
-    };
+        requestSaveGame(game).then((updatedModel) => {
+            dispatch(doneSavingGame(updatedModel));
+
+        });
+    }
 }
 
 // Bring let the user know we are saving
@@ -56,10 +43,9 @@ function beginSavingGame() {
 }
 
 // Close the form
-function doneSavingGame() {
+function doneSavingGame(updatedGame) {
     return {
-        type: EDITING_DONE_SAVING
+        type: EDITING_DONE_SAVING,
+        game: updatedGame
     };
 }
-//#endregion
-

@@ -23,11 +23,7 @@ export default function editGameReducer(state, action) {
 
     if (type === EDITING_GAME_BEGIN) {
         if (game === undefined) {
-            game = {
-                name: "",
-                description: "",
-
-            }
+            game = { name: "", description: "", }
         }
         return Object.assign({}, state, { editingGame: game, originalGame: game });
     }
@@ -42,18 +38,6 @@ export default function editGameReducer(state, action) {
 
     if (type === EDITING_DONE_SAVING || type === EDITING_GAME_ABORT) {
         return Object.assign({}, state, { editingGame: null, originalGame: null, isSaving: false });
-    }
-
-    if (type === EDITING_GAME_MOD_VALUE_CHANGE) {
-        var mod = editingGame.mods.find(m => m.name === action.modName);
-        if (mod !== undefined) {
-            var newMod = replaceFieldInObject(mod, field, value);
-
-            return Object.assign({}, state, { editingGame: Object.assign({}, editingGame, { mods: editingGame.mods.map(m => m.name === action.modName ? newMod : m) }) });
-        }
-        else {
-            debugger;
-        }
     }
 
     if (type.startsWith("EDITING")) {

@@ -1,17 +1,15 @@
 ﻿import PropTypes from 'prop-types';
 import React from 'react';
-import Button from 'react-bootstrap/Button';
 import Card from 'react-bootstrap/Card';
 import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
-import MdEdit from 'react-icons/lib/md/edit';
 import { connect } from 'react-redux';
 import PlaceHolderImage from '../assets/spagetti-rocket.jpg';
+import EditServer from '../containers/EditServer';
 import LaunchGame from '../containers/LaunchGame';
 import RestartGame from '../containers/RestartGame';
 import StopGame from '../containers/StopGame';
 import Version from './Version';
-import EditServer from '../containers/EditServer';
 
 function GameCard({ game, beginEditingGame, beginLaunchingGame, onStopGame, onRestartGame }) {
     var execution = game.currentExecution;

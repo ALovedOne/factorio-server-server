@@ -1,8 +1,4 @@
-﻿//import { LOAD_INSTANCES_BEGIN, LOAD_INSTANCES_END } from "../actions/actionType";
-
-const LOAD_INSTANCES_BEGIN = "LOAD_INSTANCES_BEGIN";
-const LOAD_INSTANCES_END = "LOAD_INSTANCES_END";
-const UPDATE_GAME_INFO = "UPDATE_GAME_INFO";
+﻿import { LOAD_INSTANCES_BEGIN, LOAD_INSTANCES_END, UPDATE_GAME_INFO, LAUNCHING_GANE_DONE, EDITING_DONE_SAVING } from "../actions/actionType";
 
 const initialState = {
     gameList: [],
@@ -45,18 +41,20 @@ export default function gameListReducer(state, action) {
         }
     }
 
-    if (action.type === UPDATE_GAME_INFO) {
-        var { gameKey, gameInfo } = action;
-
-        newGameList = state.gameList.concat([]).map((g) => {
-            if (g.key !== gameKey) return g;
-            else return gameInfo;
-        });
+    if (action.type === LAUNCHING_GANE_DONE || action.type === EDITING_DONE_SAVING) {
+        var { game } = action;
 
         return Object.assign({}, state, {
-            games: newGameList
-        });
+            gameList: _replaceGame(state.gameList, game)
+        })
     }
     // debugger;
     return state;
+}
+
+function _replaceGame(gameList, game) {
+    return gameList.map((g) => {
+        if (g.key !== game.key) return g;
+        else return game;
+    });
 }

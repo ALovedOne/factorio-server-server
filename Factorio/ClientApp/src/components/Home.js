@@ -1,7 +1,6 @@
-﻿import React from 'react'
-import GameList from '../containers/GameList';
-import EditServer from '../containers/EditServer';
+﻿import React from 'react';
 import EditGameForm from '../containers/EditGameForm';
+import GameList from '../containers/GameList';
 import LaunchGameForm from '../containers/LaunchGameForm';
 
 const Header = () => (<header>Factorio!</header>)

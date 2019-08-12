@@ -1,13 +1,11 @@
 ﻿import React from 'react';
 import Button from 'react-bootstrap/Button';
-import Col from 'react-bootstrap/Col';
 import Form from 'react-bootstrap/Form';
-import Row from 'react-bootstrap/Row';
 import { connect } from 'react-redux';
 import { abortEditingGame, editingGameSaveChanges, onEditingGameChange } from '../actions/editingGameActions';
 
 
-export function EditServer({ dispatch, editingGame, originalGame }) {
+export function EditServer({ editingGame, originalGame, onFieldChange, onRequestSave, onAbort }) {
     return (<div>
         <Form>
             <h1>Editing: {originalGame.name}</h1>
@@ -17,7 +15,7 @@ export function EditServer({ dispatch, editingGame, originalGame }) {
                 <Form.Control
                     type="text"
                     value={editingGame.name}
-                    onChange={(event) => dispatch(onEditingGameChange("name", event.target.value))}
+                    onChange={(event) => onFieldChange("name", event.target.value)}
                 />
             </Form.Group>
             <Form.Group>
@@ -25,7 +23,7 @@ export function EditServer({ dispatch, editingGame, originalGame }) {
                 <Form.Control
                     type="text"
                     value={editingGame.description}
-                    onChange={(event) => dispatch(onEditingGameChange("description", event.target.value))}
+                    onChange={(event) => onFieldChange("description", event.target.value)}
                 />
             </Form.Group>
 
@@ -34,23 +32,23 @@ export function EditServer({ dispatch, editingGame, originalGame }) {
                 <Form.Control
                     placeholder="major"
                     value={editingGame.targetVersion.major}
-                    onChange={(event) => dispatch(onEditingGameChange("targetVersion.major", event.target.value))}
+                    onChange={(event) => onFieldChange("targetVersion.major", event.target.value)}
                 />
                 <Form.Control
                     placeholder="minor"
                     value={editingGame.targetVersion.minor}
-                    onChange={(event) => dispatch(onEditingGameChange("targetVersion.minor", event.target.value))}
+                    onChange={(event) => onFieldChange("targetVersion.minor", event.target.value)}
                     disabled={editingGame.targetVersion.major == null}
                 />
                 <Form.Control
                     placeholder="patch"
                     value={editingGame.targetVersion.patch}
-                    onChange={(event) => dispatch(onEditingGameChange("targetVersion.patch", event.target.value))}
+                    onChange={(event) => onFieldChange("targetVersion.patch", event.target.value)}
                     disabled={editingGame.targetVersion.minor == null}
                 />
             </Form.Group >
-            <Button onClick={(event) => dispatch(editingGameSaveChanges(editingGame))} >Save</Button>
-            <Button onClick={() => dispatch(abortEditingGame())}>Cancel</Button>
+            <Button onClick={() => onRequestSave(editingGame)} >Save</Button>
+            <Button onClick={() => onAbort()}>Cancel</Button>
         </Form>
     </div>);
 }
@@ -67,4 +65,14 @@ function mapStateToProps(state) {
     }
 }
 
-export default connect(mapStateToProps)(EditServer);
+function mapDispatchToProps(dispatch, ownProps) {
+    return {
+        onFieldChange: (field, newValue) => {
+            dispatch(onEditingGameChange(field, newValue))
+        },
+        onRequestSave: (game) => dispatch(editingGameSaveChanges(game)),
+        onAbort: () => dispatch(abortEditingGame())
+    }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(EditServer);

@@ -1,12 +1,12 @@
 ﻿import React from 'react';
+import Navbar from 'react-bootstrap/Navbar';
 import EditGameForm from '../containers/EditGameForm';
 import GameList from '../containers/GameList';
 import LaunchGameForm from '../containers/LaunchGameForm';
+import Button from 'react-bootstrap/Button';
 
-const Header = () => (<header>Factorio!</header>)
-const AddGame = () => (<button>Add Game!</button>)
 
-export const Home = ({ editingGame, launchingGame }) => {
+export const Home = ({ editingGame, launchingGame, onAddNew }) => {
     if (editingGame) {
         var content = (<EditGameForm />)
     } else if (launchingGame) {
@@ -17,8 +17,10 @@ export const Home = ({ editingGame, launchingGame }) => {
 
     return (
         <div>
-            <Header />
-            <AddGame />
+            <Navbar bg="dark" variant="dark">
+                <Navbar.Brand>Factorio!-server-server</Navbar.Brand>
+            </Navbar>
+            <Button onClick={() => onAddNew()}>Add</Button>
             {content}
         </div>
     )

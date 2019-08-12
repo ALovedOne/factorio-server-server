@@ -1,5 +1,6 @@
 import { connect } from 'react-redux';
 import { Home } from '../components/Home';
+import { beginEditingGame } from '../actions/editingGameActions';
 
 function mapStateToProps(state) {
     const { gameListReducer, launchingGameReducer, editingGameReducer } = state;
@@ -14,6 +15,10 @@ function mapStateToProps(state) {
         editingGame,
         originalGame,
     }
+}
+
+function mapDispatchToProps(dispatch) {
+    onAddNew: () => dispatch(beginEditingGame())
 }
 
 export default connect(mapStateToProps)(Home);

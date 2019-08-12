@@ -6,14 +6,12 @@ import { connect } from 'react-redux';
 import GameCard from './GameCard';
 
 
-function GameList({ gameList, beginEditingGame }) {
+function GameList({ gameList }) {
     return (
-        <div>
-            <CardColumns>
-                {gameList.map(game => <GameCard game={game} key={game.key} />)}
-            </CardColumns>
-            <Button onClick={() => beginEditingGame()}>Add</Button>
-        </div>
+        <CardColumns>
+            {gameList.map(game => <GameCard game={game} key={game.key} />)}
+        </CardColumns>
+
     );
 }
 export default connect()(GameList);
@@ -21,5 +19,4 @@ export default connect()(GameList);
 
 GameList.propTypes = {
     gameList: PropTypes.arrayOf(PropTypes.object).isRequired,
-    beginEditingGame: PropTypes.func.isRequired
 }

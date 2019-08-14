@@ -11,7 +11,7 @@ import RestartGame from '../containers/RestartGame';
 import StopGame from '../containers/StopGame';
 import Version from './Version';
 
-function GameCard({ game, beginEditingGame, beginLaunchingGame, onStopGame, onRestartGame }) {
+function GameCard({ game }) {
     var execution = game.currentExecution;
 
 

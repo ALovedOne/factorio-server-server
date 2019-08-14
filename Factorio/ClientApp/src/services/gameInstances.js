@@ -1,11 +1,11 @@
-﻿
+﻿import { Game } from '../models';
 
 export function requestStartGame(game, port) {
     return fetch("/api/instances/" + game.key + "/start?port=" + port, {
         method: "POST"
     })
         .then((resp) => resp.json())
-    // TODO - convert to model
+        .then(Game.fromJson);
 }
 
 export function requestRestartGame(game) {
@@ -13,8 +13,7 @@ export function requestRestartGame(game) {
         method: "POST"
     })
         .then((resp) => resp.json())
-    // TODO - convert to model
-
+        .then(Game.fromJson);
 }
 
 export function requestStopGame(game) {
@@ -22,7 +21,7 @@ export function requestStopGame(game) {
         method: "POST"
     })
         .then((resp) => resp.json())
-    // TODO - convert to model
+        .then(Game.fromJson);
 }
 
 export function requestSaveGame(game) {
@@ -37,6 +36,12 @@ export function requestSaveGame(game) {
         },
         body: JSON.stringify(game)
     })
-        .then(response => response.json());
-    // TODO - convert to model
+        .then(response => response.json())
+        .then(Game.fromJson);
+}
+
+export function requestLoadAllGames() {
+    return fetch('api/instances')
+        .then(resp => resp.json())
+        .then(resp => resp.map(Game.fromJson));
 }

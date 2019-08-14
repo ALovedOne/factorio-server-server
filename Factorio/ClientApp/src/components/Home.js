@@ -7,6 +7,7 @@ import Button from 'react-bootstrap/Button';
 
 
 export const Home = ({ editingGame, launchingGame, onAddNew }) => {
+    debugger;
     if (editingGame) {
         var content = (<EditGameForm />)
     } else if (launchingGame) {

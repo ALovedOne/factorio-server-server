@@ -18,7 +18,9 @@ function mapStateToProps(state) {
 }
 
 function mapDispatchToProps(dispatch) {
-    onAddNew: () => dispatch(beginEditingGame())
+    return {
+        onAddNew: () => dispatch(beginEditingGame())
+    };
 }
 
-export default connect(mapStateToProps)(Home);
+export default connect(mapStateToProps, mapDispatchToProps)(Home);

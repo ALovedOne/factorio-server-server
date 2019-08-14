@@ -9,7 +9,7 @@ function mapStateToProps({ gameListReducer }) {
 };
 
 const mapDispatchToProps = dispatch => ({
-    beginEditingGame: () => dispatch(beginEditingGame(null)),
+    beginEditingGame: () => dispatch(beginEditingGame()),
 })
 
 export default connect(

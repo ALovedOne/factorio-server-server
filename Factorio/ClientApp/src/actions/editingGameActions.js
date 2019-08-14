@@ -1,11 +1,12 @@
 ﻿import { EDITING_BEGIN_SAVING, EDITING_DONE_SAVING, EDITING_GAME_ABORT, EDITING_GAME_BEGIN, EDITING_GAME_VALUE_CHANGE } from "./actionType";
 import { requestSaveGame } from '../services/gameInstances';
+import { Game } from '../models';
 
 // Bring up the editing form
 export function beginEditingGame(game) {
     return {
         type: EDITING_GAME_BEGIN,
-        game: game
+        game: game || new Game()
     };
 }
 
@@ -28,7 +29,7 @@ export function onEditingGameChange(field, value) {
 export function editingGameSaveChanges(game) {
     return dispatch => {
         dispatch(beginSavingGame());
-        requestSaveGame(game).then((updatedModel) => {
+        return requestSaveGame(game).then((updatedModel) => {
             dispatch(doneSavingGame(updatedModel));
 
         });

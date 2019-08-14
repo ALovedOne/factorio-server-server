@@ -4,7 +4,7 @@ services:
 env:
   global:
     - IMAGE_NAME=alovedone/factorio-server-server   
-    - REGISTRY_USER=ALovedOne
+    - REGISTRY_USER=alovedone
     # REGISTRY_PASS=....
     - secure: "UKiochV1/KkLStC7rk3GEeHp1dphtTfw81004jbP1DHwIqP1LMgP+GSpl7OaKw+3mka/cV524zqLdzboidviCu8yTtKkikbEF9GUl+RhsheriSVtQ1BBfib7JTEx3z1NRcOXJZa6Th1ki7MmYLHkZu/27zMGme+LNTV+Rm53DX2uPuX15KldmaEmkeJnc0PbFibT2egLK+w281M9U19xPIOmECJ1ZyZYH6WnSj/fzcvCl0eb7bNuCDnYS/a0f+uQt52/LTKl9aCVGH5KYwN/EzsTeQmhQNAm26uiFwc/FrIwDO6DRYRniZgrfWVyahgzuTmMv54q2wjTqIHsSSYUa+fk9HboB8XoFxRFRBSHeK5e4WJfN4xS5VKYlpyILmUTIXza2d8d8n8LiutSr3C5PugJXzn3u4YFLGXjl5o5E3dMuWX70dwKEhpjtpzs7cB35oOoRN4yhwlvUs3rnpTF/8gQDbrwEQz811YLnB7G56WvLBtEmyfl2fAvsZfTkjTn4knnC0m8Ah/tjS9oYGajODOnux2BQ0S+aSwrqugi+eK6bXqSCpxrcm3UpCHWZ3SQB6uVk8OS/FeCVGpE8QJdoh4KxhcaWqFcuW/VW0NFxL271QGiPC9LNb0o6qRixnHYk281tTfw2VAYaNhSUiHh6T+rGO/x8GvATjH6Ivjamek="
 before_script:

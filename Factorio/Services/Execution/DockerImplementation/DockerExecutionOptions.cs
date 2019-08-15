@@ -10,5 +10,6 @@ namespace Factorio.Services.Execution.DockerImplementation
         public int PortRangeBegin { get; set; }
         public int PortRangeEnd { get; set; }
         public string DockerUrl { get; set; }
+        public string DockerPublicHostName { get; set; }
     }
 }

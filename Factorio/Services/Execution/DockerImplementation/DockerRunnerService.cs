@@ -22,6 +22,7 @@ namespace Factorio.Services.Execution.DockerImplementation
         private readonly int _portRangeStart;
         private readonly int _portRangeEnd;
         private readonly ILogger _logger;
+        private readonly string _publicHost;
 
 
         /*
@@ -36,11 +37,12 @@ namespace Factorio.Services.Execution.DockerImplementation
                     "npipe://./pipe/docker_engine";
             string dockerURL = options?.Value.DockerUrl;
 
-            this._dockerClient = new DockerClientConfiguration(new Uri(dockerURL ?? defaultUrl)).CreateClient();
-            this._portRangeStart = options.Value.PortRangeBegin;
-            this._portRangeEnd = options.Value.PortRangeEnd;
+            _dockerClient = new DockerClientConfiguration(new Uri(dockerURL ?? defaultUrl)).CreateClient();
+            _portRangeStart = options.Value.PortRangeBegin;
+            _portRangeEnd = options.Value.PortRangeEnd;
+            _publicHost = options.Value.DockerPublicHostName;
 
-            this._logger = logger;
+            _logger = logger;
 
             logger.LogInformation("Docker URL: {url} Port Range: {portStart} - {portEnd}", dockerURL ?? defaultUrl, this._portRangeStart, this._portRangeEnd);
         }
@@ -246,10 +248,11 @@ namespace Factorio.Services.Execution.DockerImplementation
             return new ExecutionInfo
             {
                 Key = containerInfo.ID,
-                Hostname = "localhost",
+                Hostname = this._publicHost,
                 Port = exposedPort != null ? exposedPort.PublicPort : 0,
                 RunningVersion = runningVersion,
-                InstanceKey = containerInfo.Labels[DOCKER_LABEL_KEY]
+                InstanceKey = containerInfo.Labels[DOCKER_LABEL_KEY],
+                Status = containerInfo.State == "exited"? ExecutionStatus.Stoppped : ExecutionStatus.Started
             };
         }
 

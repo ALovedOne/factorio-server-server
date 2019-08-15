@@ -14,7 +14,6 @@ import Version from './Version';
 function GameCard({ game }) {
     var execution = game.currentExecution;
 
-
     var footer = (
         <Col>
             <LaunchGame game={game} />
@@ -26,11 +25,17 @@ function GameCard({ game }) {
                 <StopGame game={game} />
                 <RestartGame game={game} />
             </Col>);
+
         var runningVersion = <span>{` (Running:  ${execution.runningVersion} )`}</span>;
+        var connectionInfo = <Card.Text>{`Host: ${execution.hostname}:${execution.port}`}</Card.Text>
     }
 
     if (game.lastSave) {
         var saveVersion = <span>(Last Save: <Version version={game.lastSave.version} />)</span>;
+    }
+
+    if (game.mods.length > 0) {
+        var modsList = `Mods: ${game.mods.length}`
     }
 
     // Add save.mods
@@ -40,15 +45,9 @@ function GameCard({ game }) {
             <Card.Body>
                 <Card.Title>{game.name}</Card.Title>
                 <Card.Subtitle><Version version={game.targetVersion} /> {runningVersion ? runningVersion : saveVersion ? saveVersion : ""}</Card.Subtitle>
-                <Card.Text>
-                    {game.description}
-                </Card.Text>
-                <Card.Text>
-                    Mod Count: {game.mods.length}
-                </Card.Text>
-                <Card.Text>
-                    Connection Info
-                </Card.Text>
+                {connectionInfo}
+                <Card.Text>{game.description}</Card.Text>
+                {modsList}
             </Card.Body>
             <Card.Footer>
                 <Row>

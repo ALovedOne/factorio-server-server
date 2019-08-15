@@ -22,7 +22,8 @@ const EditServerDialog = ({ server, onUpdateServer, onClose }) => {
                             onUpdateServer(updatedGame);
                             onClose();
                         },
-                            error => {
+                        error => {
+                                // TODO
                                 actions.setSubmitting(false);
                                 actions.setErrors(error);
                                 actions.setStatus({ msg: 'Set some arbitrary status or data' });

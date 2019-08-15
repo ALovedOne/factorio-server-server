@@ -30,22 +30,22 @@ namespace Factorio.Test
 
         public MockInstanceProvider(IEnumerable<GameInstance> mockData)
         {
-            this._data = mockData;
+            _data = mockData;
         }
 
         public IEnumerable<GameInstance> GetAll()
         {
-            return this._data;
+            return _data;
         }
 
         public GameInstance GetById(string key)
         {
-            return this._data.FirstOrDefault(e => e.Key == key);
+            return _data.FirstOrDefault(e => e.Key == key);
         }
 
         public bool IdExists(string key)
         {
-            return this.GetById(key) != null;
+            return GetById(key) != null;
         }
 
         public GameInstance TryAddServer(GameInstance value)

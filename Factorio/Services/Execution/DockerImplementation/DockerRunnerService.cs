@@ -89,6 +89,16 @@ namespace Factorio.Services.Execution.DockerImplementation
                 throw new Exception("TODO - Invalid port");
             }
 
+            if (instance.ConfigUrl.Scheme != "file")
+            {
+                this._logger.LogWarning("Config URL Scheme ({scheme}) is not valid", instance.ConfigUrl.Scheme);
+            }
+
+            if (instance.LastSaveUrl != null && instance.LastSaveUrl.Scheme != "file")
+            {
+                this._logger.LogWarning("Last Save URL Scheme ({scheme}) is not valid", instance.LastSaveUrl.Scheme);
+            }
+
             if (instance.TargetVersion.Patch == null)
                 version = string.Format("{0}.{1}", instance.TargetVersion.Major, instance.TargetVersion.Minor);
             else
@@ -96,7 +106,7 @@ namespace Factorio.Services.Execution.DockerImplementation
 
             await this.LoadImageAsync(version);
             // TODO - handle invliad info
-            string newID = await this.StartImageAsync(instance.Key, port, instance.ImplementationInfo.GetValueOrDefault("localPath"), version);
+            string newID = await this.StartImageAsync(instance.Key, port, instance.ConfigUrl, version);
 
             ExecutionInfo i = new ExecutionInfo
             {
@@ -158,9 +168,11 @@ namespace Factorio.Services.Execution.DockerImplementation
         /// <param name="port"></param>
         /// <param name="sourcePath"></param>
         /// <returns></returns>
-        private async Task<string> StartImageAsync(string key, int port, string sourcePath, string version)
+        private async Task<string> StartImageAsync(string key, int port, Uri configUri, string version)
         {
-            this._logger.LogInformation("Trying to start image {imageKey} {version} on {port} with {URL}", key, version, port, sourcePath);
+            this._logger.LogInformation("Trying to start image {imageKey} {version} on {port} with {URL}", key, version, port, configUri);
+
+            Mount factorioMount = ConfigUrlToMount(configUri);
 
             CreateContainerResponse newContainer = null;
             try
@@ -178,15 +190,7 @@ namespace Factorio.Services.Execution.DockerImplementation
                     HostConfig = new HostConfig
                     {
                         PortBindings = new Dictionary<string, IList<PortBinding>> { { "34197/udp", new[] { new PortBinding { HostPort = string.Format("{0}", port) } } } },
-                        Mounts = new List<Mount>
-                    {
-                        new Mount
-                        {
-                            Target = "/factorio",
-                            Type="bind",
-                            Source = sourcePath
-                        }
-                    }
+                        Mounts = new List<Mount> { factorioMount }
                     }
                 });
             }
@@ -199,6 +203,24 @@ namespace Factorio.Services.Execution.DockerImplementation
             await this._dockerClient.Containers.StartContainerAsync(newContainer.ID, new ContainerStartParameters());
 
             return newContainer.ID;
+        }
+
+        public static Mount ConfigUrlToMount(Uri configUri)
+        {
+            if (configUri.Scheme == "file")
+            {
+                return new Mount
+                {
+                    Target = "/factorio",
+                    Type = "bind",
+                    Source = configUri.AbsolutePath
+                };
+            }
+            else
+            {
+                return null;
+
+            }
         }
 
         /// <summary>
@@ -252,7 +274,7 @@ namespace Factorio.Services.Execution.DockerImplementation
                 Port = exposedPort != null ? exposedPort.PublicPort : 0,
                 RunningVersion = runningVersion,
                 InstanceKey = containerInfo.Labels[DOCKER_LABEL_KEY],
-                Status = containerInfo.State == "exited"? ExecutionStatus.Stoppped : ExecutionStatus.Started
+                Status = containerInfo.State == "exited" ? ExecutionStatus.Stoppped : ExecutionStatus.Started
             };
         }
 

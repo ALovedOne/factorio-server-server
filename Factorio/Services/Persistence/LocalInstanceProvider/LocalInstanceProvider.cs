@@ -11,18 +11,14 @@ namespace Factorio.Services.Persistence.LocalInstanceProvider
     {
         #region ctor
         public LocalInstanceProvider(IOptions<LocalInstanceOptions> optionsAccessor, ILogger<LocalInstanceProvider> logger) :
-            base(new DirectoryInfo( optionsAccessor.Value.BaseDirectory), logger)
+            base(new DirectoryInfo(optionsAccessor.Value.BaseDirectory), logger)
         {
         }
         #endregion
 
-        
-        public override IReadOnlyDictionary<string, string> GetImplementationInfo(string key)
+        public override string ConfigBaseDir(string key)
         {
-            return new Dictionary<string, string>
-            {
-                { "localPath", Path.Combine(this._baseDirectory.FullName, key) }
-            };
+            return Path.Combine(this._baseDirectory.FullName, key);
         }
     }
 }

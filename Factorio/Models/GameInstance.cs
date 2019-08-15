@@ -24,8 +24,10 @@ namespace Factorio.Models
 
         // From saves directory
         public GameSave LastSave { get; set; }
+        public Uri ConfigUrl { get; set; }
+        public Uri LastSaveUrl { get; set; }
 
-        public IReadOnlyDictionary<string, string> ImplementationInfo { get; set; }
+
         public ExecutionInfo CurrentExecution { get; set; }
 
         public bool Valid

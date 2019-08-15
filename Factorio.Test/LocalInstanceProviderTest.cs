@@ -1,8 +1,6 @@
 using Factorio.Models;
-using Factorio.Persistence;
 using Factorio.Services.Interfaces;
 using Factorio.Services.Persistence.LocalInstanceProvider;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -12,7 +10,7 @@ using Xunit;
 
 namespace Factorio.Test
 {
-    public class LocalInstanceProviderTest : TestWithStuff
+    public class LocalInstanceProviderTest : TestWithTempDir
     {
         private readonly IInstanceProvider _instanceProvider;
 
@@ -20,17 +18,17 @@ namespace Factorio.Test
         {
             IOptions<LocalInstanceOptions> options = Options.Create(new LocalInstanceOptions { BaseDirectory = FullPath });
             ILogger<LocalInstanceProvider> logger = new Mock<ILogger<LocalInstanceProvider>>().Object;
-            this._instanceProvider = new LocalInstanceProvider(options, logger);
+            _instanceProvider = new LocalInstanceProvider(options, logger);
         }
 
         [Fact]
         public void TestEnumeratesInstances()
         {
-            this.AddTestSave("save_15_40");
-            this.AddTestSave("save_17_50");
-            this.AddBlankDir("blank_dir");
+            AddTestSave("save_15_40");
+            AddTestSave("save_17_50");
+            AddBlankDir("blank_dir");
 
-            List<GameInstance> all = new List<GameInstance>(this._instanceProvider.GetAll());
+            List<GameInstance> all = new List<GameInstance>(_instanceProvider.GetAll());
 
             Assert.Equal(3, all.Count);
         }
@@ -38,10 +36,10 @@ namespace Factorio.Test
         [Fact]
         public void TestLoadById()
         {
-            this.AddTestSave("save_15_40");
-            this.AddTestSave("save_17_50");
+            AddTestSave("save_15_40");
+            AddTestSave("save_17_50");
 
-            GameInstance testInstance = this._instanceProvider.GetById("save_17_50");
+            GameInstance testInstance = _instanceProvider.GetById("save_17_50");
             Assert.NotNull(testInstance);
             Assert.Equal("save_17_50", testInstance.Key);
             Assert.Equal(17, testInstance.LastSave.Version.Minor);
@@ -50,18 +48,18 @@ namespace Factorio.Test
         [Fact]
         public void TestIdExists()
         {
-            this.AddTestSave("save_17_50");
+            AddTestSave("save_17_50");
 
-            Assert.True(this._instanceProvider.IdExists("save_17_50"));
-            Assert.False(this._instanceProvider.IdExists("slug"));
+            Assert.True(_instanceProvider.IdExists("save_17_50"));
+            Assert.False(_instanceProvider.IdExists("slug"));
         }
 
         [Fact]
         public void TestTryAddServerOverExisting()
         {
-            this.AddBlankDir("existing-dir");
+            AddBlankDir("existing-dir");
 
-            GameInstance newInstance = this._instanceProvider.TryAddServer(new GameInstance
+            GameInstance newInstance = _instanceProvider.TryAddServer(new GameInstance
             {
                 Name = "Existing Dir"
             });
@@ -72,8 +70,8 @@ namespace Factorio.Test
         [Fact]
         public void TestTryAddServerSuccessfully()
         {
-            this.AddBlankDir("existing_dir");
-            GameInstance newInstance = this._instanceProvider.TryAddServer(new GameInstance
+            AddBlankDir("existing_dir");
+            GameInstance newInstance = _instanceProvider.TryAddServer(new GameInstance
             {
                 Description = "New Description",
                 Name = "New Dir",
@@ -92,8 +90,9 @@ namespace Factorio.Test
             Assert.Equal(0, newInstance.TargetVersion.Major);
             Assert.Equal(17, newInstance.TargetVersion.Minor);
             Assert.Equal(20, newInstance.TargetVersion.Patch);
-            Assert.Equal(Path.Combine(this.FullPath, "new-dir"),
-                newInstance.ImplementationInfo.GetValueOrDefault("localPath"));
+
+            Assert.Equal(Path.Combine(FullPath, "new-dir").Replace("\\", "/"), newInstance.ConfigUrl.AbsolutePath);
+            Assert.Null(newInstance.LastSaveUrl);
         }
 
         [Fact]
@@ -101,10 +100,10 @@ namespace Factorio.Test
         {
             const string newServerName = "New Server Name";
             const string newServerDescription = "New Server Description";
-            GameInstance game = this.AddTestSave("save_17_50");
-            GameInstance desciredState = new GameInstance { Key = "save_17_50", Name = newServerName, Description = newServerDescription, TargetVersion = game.TargetVersion };
+            AddTestSave("save_17_50");
+            GameInstance desiredState = new GameInstance { Key = "save_17_50", Name = newServerName, Description = newServerDescription, TargetVersion = new FuzzyVersion { Major = 0, Minor = 17, Patch = 50 } };
 
-            GameInstance updatedGame = this._instanceProvider.UpdateServer(desciredState);
+            GameInstance updatedGame = _instanceProvider.UpdateServer(desiredState);
             Assert.NotNull(updatedGame);
 
             Assert.Equal(newServerName, updatedGame.Name);
@@ -114,9 +113,9 @@ namespace Factorio.Test
         [Fact]
         public void TestLoadingSaveDir()
         {
-            this.AddTestSave("save_17_50");
+            AddTestSave("save_17_50");
 
-            List<GameInstance> all = new List<GameInstance>(this._instanceProvider.GetAll());
+            List<GameInstance> all = new List<GameInstance>(_instanceProvider.GetAll());
             Assert.Single(all);
 
             GameInstance testInstance = all[0];
@@ -128,10 +127,20 @@ namespace Factorio.Test
         [Fact]
         public void TestLoadingBlankDir()
         {
-            this.AddBlankDir("blank_dir");
+            AddBlankDir("blank_dir");
 
-            List<GameInstance> all = new List<GameInstance>(this._instanceProvider.GetAll());
+            List<GameInstance> all = new List<GameInstance>(_instanceProvider.GetAll());
             Assert.Single(all);
         }
+
+        [Fact]
+        public void TestLoadingRecentSave()
+        {
+            AddTestSave("save_15_40");
+
+            GameInstance g = _instanceProvider.GetById("save_15_40");
+            Assert.EndsWith("_autosave2.zip", g.LastSaveUrl.AbsolutePath);
+        }
+
     }
 }

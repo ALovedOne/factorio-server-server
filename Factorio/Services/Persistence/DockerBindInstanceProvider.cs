@@ -15,10 +15,10 @@ namespace Factorio.Services.Persistence
         {
             _hostPath = options.Value.HostBaseDirectory;
         }
-        
-        public override IReadOnlyDictionary<string, string> GetImplementationInfo(string key)
+
+        public override string ConfigBaseDir(string key)
         {
-            return new Dictionary<string, string> { { "localPath", Path.Combine(_hostPath, key) } };
+            return Path.Combine(_hostPath, key);
         }
     }
 }

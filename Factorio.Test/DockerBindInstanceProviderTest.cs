@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Factorio.Test
 {
-    public class DockerBindInstanceProviderTest : TestWithStuff
+    public class DockerBindInstanceProviderTest : TestWithTempDir
     {
         private readonly IInstanceProvider _instanceProvider;
         private static string RemoteDirectory = "C:\\Factorio";
@@ -19,15 +19,20 @@ namespace Factorio.Test
         {
             IOptions<DockerBindInstanceOptions> options = Options.Create(new DockerBindInstanceOptions { BoundBaseDirectory = FullPath, HostBaseDirectory = RemoteDirectory });
             ILogger<DockerBindInstanceProvider> logger = new Mock<ILogger<DockerBindInstanceProvider>>().Object;
-            this._instanceProvider = new DockerBindInstanceProvider(options, logger);
+            _instanceProvider = new DockerBindInstanceProvider(options, logger);
         }
 
         [Fact]
         public void LocalDirectoryIsRelativeToHost()
         {
-            this.AddTestSave("save_17_50");
-            GameInstance instance = this._instanceProvider.GetById("save_17_50");
-            Assert.Equal(Path.Combine(RemoteDirectory, "save_17_50"), instance.ImplementationInfo.GetValueOrDefault("localPath"));
+            AddTestSave("save_17_50");
+            GameInstance instance = _instanceProvider.GetById("save_17_50");
+
+            Assert.Equal("file", instance.ConfigUrl.Scheme);
+            Assert.Equal(Path.Combine(RemoteDirectory, "save_17_50"), instance.ConfigUrl.AbsolutePath);
+
+            Assert.Equal("file", instance.LastSaveUrl.Scheme);
+            Assert.Equal(Path.Combine(RemoteDirectory, "save_17_50"), instance.LastSaveUrl.AbsolutePath);
         }
     }
 }

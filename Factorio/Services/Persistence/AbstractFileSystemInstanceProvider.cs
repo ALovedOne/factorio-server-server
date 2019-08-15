@@ -4,6 +4,7 @@ using Factorio.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Slugify;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -30,7 +31,7 @@ namespace Factorio.Services.Persistence
             _logger = logger;
         }
 
-        public abstract IReadOnlyDictionary<string, string> GetImplementationInfo(string key);
+        public abstract string ConfigBaseDir(string key);
 
         public IEnumerable<GameInstance> GetAll()
         {
@@ -222,7 +223,8 @@ namespace Factorio.Services.Persistence
                         Patch = sInfo.PatchVersion
                     },
                     Mods = sInfo.Mods,
-                    ImplementationInfo = GetImplementationInfo(serverInfoFile.Directory.Name)
+                    ConfigUrl = GetConfigUrl(serverInfoFile.Directory.Name),
+                    LastSaveUrl = GetLastSaveUrl(serverInfoFile.Directory.Name)
                 };
             }
         }
@@ -240,10 +242,23 @@ namespace Factorio.Services.Persistence
                 Name = serverFolder.Name,
                 TargetVersion = new FuzzyVersion { Major = 0, Minor = 17, Patch = null },
                 Description = "",
-                ImplementationInfo = GetImplementationInfo(serverFolder.Name)
+                ConfigUrl = GetConfigUrl(serverFolder.Name),
+                LastSaveUrl = GetLastSaveUrl(serverFolder.Name)
             };
         }
         #endregion
+
+        private Uri GetConfigUrl(string gameKey)
+        {
+            return new Uri("file:///" + ConfigBaseDir(gameKey));
+        }
+
+        private Uri GetLastSaveUrl(string gameKey)
+        {
+            FileInfo lastSave = GetActiveGameSave(GetServerDirectory(gameKey));
+            if (lastSave == null) return null;
+            return new Uri("file:///" + Path.Combine(ConfigBaseDir(gameKey), "saves", lastSave.Name));
+        }
 
         #region On disk files
         private class ServerInfoFile

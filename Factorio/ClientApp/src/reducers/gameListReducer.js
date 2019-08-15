@@ -44,8 +44,6 @@ export default function gameListReducer(state, action) {
     if (action.type === LAUNCHING_GANE_DONE || action.type === EDITING_DONE_SAVING) {
         var { game } = action;
 
-        debugger;
-
         return Object.assign({}, state, {
             gameList: _replaceGame(state.gameList, game)
         })

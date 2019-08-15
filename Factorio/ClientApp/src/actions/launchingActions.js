@@ -1,5 +1,5 @@
 ﻿import * as gameInstanceService from '../services/gameInstances';
-import { LAUNCHING_GAME_BEGIN, LAUNCHING_GAME_ABORT, LAUNCHING_GAME_UPDATE_INFO, LAUNCHING_GAME_IN_PROGRESS, LAUNCHING_GANE_DONE } from "./actionType";
+import { LAUNCHING_GAME_ABORT, LAUNCHING_GAME_BEGIN, LAUNCHING_GANE_DONE } from "./actionType";
 
 /*
  * 1) beginStartingGame -> bring up form
@@ -26,14 +26,6 @@ export function beginLaunchingGame(game) {
     };
 }
 
-export function updateLaunchingGameInfo(game, port) {
-    return {
-        type: LAUNCHING_GAME_UPDATE_INFO,
-        game: game,
-        info: { port }
-    }
-}
-
 export function abortLaunchingGame(game) {
     return {
         type: LAUNCHING_GAME_ABORT,
@@ -41,17 +33,8 @@ export function abortLaunchingGame(game) {
     }
 }
 
-export function initiateStartingGame(game, info) {
-    return dispatch => {
-        dispatch(launchingGameInProgress(game));
-        gameInstanceService.requestStartGame(game, info.port)
-            .then((updatedGameModel) => dispatch(launchingGameDone(updatedGameModel)));
-    }
-}
-
 export function restartGame(game) {
     return dispatch => {
-        dispatch(launchingGameInProgress(game));
         gameInstanceService.requestRestartGame(game)
             .then((updatedGameModel) => dispatch(launchingGameDone(updatedGameModel)));
     }
@@ -59,22 +42,15 @@ export function restartGame(game) {
 
 export function stopGame(game) {
     return dispatch => {
-        dispatch(launchingGameInProgress(game));
         gameInstanceService.requestStopGame(game)
             .then((updatedGameModel) => dispatch(launchingGameDone(updatedGameModel)));
     }
 }
 
-function launchingGameDone(game) {
+export function launchingGameDone(game) {
     return {
         type: LAUNCHING_GANE_DONE,
         game: game
     }
 }
 
-function launchingGameInProgress(game) {
-    return {
-        type: LAUNCHING_GAME_IN_PROGRESS,
-        game: game
-    }
-}

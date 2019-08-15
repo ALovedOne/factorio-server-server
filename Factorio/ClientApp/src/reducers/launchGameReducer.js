@@ -16,14 +16,6 @@ export default function launchingGameReducer(oldState = initialState, action) {
         return initialState;
     }
 
-    if (action.type === LAUNCHING_GAME_UPDATE_INFO) {
-        return Object.assign({}, oldState, {
-            info: {
-                port: action.info.port || oldState.info.port,
-            }
-        });
-    }
-
     if (action.type === LAUNCHING_GANE_DONE) {
         return initialState;
     }

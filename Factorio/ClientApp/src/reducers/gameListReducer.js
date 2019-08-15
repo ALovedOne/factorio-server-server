@@ -44,6 +44,8 @@ export default function gameListReducer(state, action) {
     if (action.type === LAUNCHING_GANE_DONE || action.type === EDITING_DONE_SAVING) {
         var { game } = action;
 
+        debugger;
+
         return Object.assign({}, state, {
             gameList: _replaceGame(state.gameList, game)
         })
@@ -53,8 +55,12 @@ export default function gameListReducer(state, action) {
 }
 
 function _replaceGame(gameList, game) {
-    return gameList.map((g) => {
-        if (g.key !== game.key) return g;
-        else return game;
-    });
+    if (gameList.find(x => x.key === game.key)) {
+        return gameList.map((g) => {
+            if (g.key !== game.key) return g;
+            else return game;
+        });
+    } else {
+        return gameList.concat([game]);
+    }
 }

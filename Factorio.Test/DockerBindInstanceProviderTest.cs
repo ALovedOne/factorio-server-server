@@ -1,23 +1,22 @@
 ﻿using Factorio.Models;
 using Factorio.Services.Interfaces;
-using Factorio.Services.Persistence;
+using Factorio.Services.Persistence.FileSystems;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System.Collections.Generic;
+using Moq;
 using System.IO;
 using Xunit;
-using Moq;
-using Microsoft.Extensions.Logging;
 
 namespace Factorio.Test
 {
     public class DockerBindInstanceProviderTest : TestWithTempDir
     {
         private readonly IInstanceProvider _instanceProvider;
-        private static string RemoteDirectory = "C:\\Factorio";
+        private static string RemoteDirectory = "C:/Factorio/";
 
         public DockerBindInstanceProviderTest() : base()
         {
-            IOptions<DockerBindInstanceOptions> options = Options.Create(new DockerBindInstanceOptions { BoundBaseDirectory = FullPath, HostBaseDirectory = RemoteDirectory });
+            IOptions<InstanceProviderOptions> options = Options.Create(new InstanceProviderOptions { BaseDirectory = FullPath, MountDirectory = RemoteDirectory });
             ILogger<DockerBindInstanceProvider> logger = new Mock<ILogger<DockerBindInstanceProvider>>().Object;
             _instanceProvider = new DockerBindInstanceProvider(options, logger);
         }
@@ -29,10 +28,10 @@ namespace Factorio.Test
             GameInstance instance = _instanceProvider.GetById("save_17_50");
 
             Assert.Equal("file", instance.ConfigUrl.Scheme);
-            Assert.Equal(Path.Combine(RemoteDirectory, "save_17_50"), instance.ConfigUrl.AbsolutePath);
+            Assert.Equal("C:/Factorio/save_17_50/", instance.ConfigUrl.AbsolutePath);
 
             Assert.Equal("file", instance.LastSaveUrl.Scheme);
-            Assert.Equal(Path.Combine(RemoteDirectory, "save_17_50"), instance.LastSaveUrl.AbsolutePath);
+            Assert.Equal("C:/Factorio/save_17_50/saves/_autosave1.zip", instance.LastSaveUrl.AbsolutePath);
         }
     }
 }

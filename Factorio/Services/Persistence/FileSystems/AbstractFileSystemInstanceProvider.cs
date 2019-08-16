@@ -10,7 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace Factorio.Services.Persistence
+namespace Factorio.Services.Persistence.FileSystems
 {
     public abstract class AbstractFileSystemInstanceProvider : IInstanceProvider
     {
@@ -23,15 +23,15 @@ namespace Factorio.Services.Persistence
         protected readonly DirectoryInfo _baseDirectory;
         private readonly ISlugHelper _slug;
         private readonly ILogger _logger;
+        private readonly Uri _baseUri;
 
-        public AbstractFileSystemInstanceProvider(DirectoryInfo baseDir, ILogger logger)
+        public AbstractFileSystemInstanceProvider(DirectoryInfo baseDir, Uri baseUri, ILogger logger)
         {
             _slug = new SlugHelper(new SlugHelper.Config());
             _baseDirectory = baseDir;
             _logger = logger;
+            _baseUri = baseUri;
         }
-
-        public abstract string ConfigBaseDir(string key);
 
         public IEnumerable<GameInstance> GetAll()
         {
@@ -223,7 +223,7 @@ namespace Factorio.Services.Persistence
                         Patch = sInfo.PatchVersion
                     },
                     Mods = sInfo.Mods,
-                    ConfigUrl = GetConfigUrl(serverInfoFile.Directory.Name),
+                    ConfigUrl = GetConfigDirUri(serverInfoFile.Directory.Name),
                     LastSaveUrl = GetLastSaveUrl(serverInfoFile.Directory.Name)
                 };
             }
@@ -242,22 +242,22 @@ namespace Factorio.Services.Persistence
                 Name = serverFolder.Name,
                 TargetVersion = new FuzzyVersion { Major = 0, Minor = 17, Patch = null },
                 Description = "",
-                ConfigUrl = GetConfigUrl(serverFolder.Name),
+                ConfigUrl = GetConfigDirUri(serverFolder.Name),
                 LastSaveUrl = GetLastSaveUrl(serverFolder.Name)
             };
         }
         #endregion
 
-        private Uri GetConfigUrl(string gameKey)
+        private Uri GetConfigDirUri(string gameKey)
         {
-            return new Uri("file:///" + ConfigBaseDir(gameKey));
+            return new Uri(this._baseUri, gameKey + "/");
         }
 
         private Uri GetLastSaveUrl(string gameKey)
         {
             FileInfo lastSave = GetActiveGameSave(GetServerDirectory(gameKey));
             if (lastSave == null) return null;
-            return new Uri("file:///" + Path.Combine(ConfigBaseDir(gameKey), "saves", lastSave.Name));
+            return new Uri(this._baseUri, gameKey + "/saves/" + lastSave.Name);
         }
 
         #region On disk files

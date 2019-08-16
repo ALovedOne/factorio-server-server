@@ -24,6 +24,7 @@ namespace Factorio.Services.Execution.DockerImplementation
         private readonly ILogger _logger;
         private readonly string _publicHost;
 
+        private readonly string[] _knownSchemes = { "file", "nfs" };
 
         /*
          * Adding pre-emtive port checking
@@ -89,12 +90,12 @@ namespace Factorio.Services.Execution.DockerImplementation
                 throw new Exception("TODO - Invalid port");
             }
 
-            if (instance.ConfigUrl.Scheme != "file")
+            if (!_knownSchemes.Contains(instance.ConfigUrl.Scheme))
             {
                 this._logger.LogWarning("Config URL Scheme ({scheme}) is not valid", instance.ConfigUrl.Scheme);
             }
 
-            if (instance.LastSaveUrl != null && instance.LastSaveUrl.Scheme != "file")
+            if (instance.LastSaveUrl != null && !_knownSchemes.Contains(instance.LastSaveUrl.Scheme))
             {
                 this._logger.LogWarning("Last Save URL Scheme ({scheme}) is not valid", instance.LastSaveUrl.Scheme);
             }
@@ -172,7 +173,15 @@ namespace Factorio.Services.Execution.DockerImplementation
         {
             this._logger.LogInformation("Trying to start image {imageKey} {version} on {port} with {URL}", key, version, port, configUri);
 
-            Mount factorioMount = ConfigUrlToMount(configUri);
+            VolumesCreateParameters r = CreateVolumeRequest(key, configUri);
+
+            if (r != null)
+            {
+                VolumeResponse vol = await this._dockerClient.Volumes.CreateAsync(CreateVolumeRequest(key, configUri));
+                // TODO error handling
+            }
+
+            Mount factorioMount = ConfigUrlToMount(key, configUri);
 
             CreateContainerResponse newContainer = null;
             try
@@ -199,13 +208,39 @@ namespace Factorio.Services.Execution.DockerImplementation
                 throw new Exception("Failed to start instance", e);
             }
 
-
             await this._dockerClient.Containers.StartContainerAsync(newContainer.ID, new ContainerStartParameters());
 
             return newContainer.ID;
         }
 
-        public static Mount ConfigUrlToMount(Uri configUri)
+        /// <summary>
+        /// Creates and returns a Docker request to create a new volume if needed
+        /// </summary>
+        /// <param name="gameKey"></param>
+        /// <param name="configDir"></param>
+        /// <returns></returns>
+        public static VolumesCreateParameters CreateVolumeRequest(string gameKey, Uri configDir)
+        {
+            if (configDir.Scheme == "nfs")
+            {
+                return new VolumesCreateParameters
+                {
+                    Driver = "local",
+                    Name = string.Format("factorio-volume-{0}", gameKey),
+                    DriverOpts = new Dictionary<string, string> { { "device", configDir.AbsolutePath }, { "o", string.Format("addr={0},vers=4,soft", configDir.Host) }, { "type", "nfs" } },
+                    Labels = new Dictionary<string, string> { { "factorio-game-key", gameKey } },
+                };
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Creates the Mount directive for the docker create
+        /// </summary>
+        /// <param name="configUri"></param>
+        /// <param name="vol"></param>
+        /// <returns></returns>
+        public static Mount ConfigUrlToMount(string gameKey, Uri configUri)
         {
             if (configUri.Scheme == "file")
             {
@@ -214,6 +249,15 @@ namespace Factorio.Services.Execution.DockerImplementation
                     Target = "/factorio",
                     Type = "bind",
                     Source = configUri.AbsolutePath
+                };
+            }
+            else if (configUri.Scheme == "nfs")
+            {
+                return new Mount
+                {
+                    Type = "volume",
+                    Target = "/factorio",
+                    Source = string.Format("factorio-volume-{0}", gameKey)
                 };
             }
             else

@@ -46,12 +46,49 @@ namespace Factorio.Test
         [Fact]
         public void TestMountWithLocalFile()
         {
-            Mount m = DockerRunnerService.ConfigUrlToMount(new Uri("file:///localpath/save/path/"));
+            string gameKey = "test-game-key";
+            Uri configUrl = new Uri("file:///localpath/save/path/");
+
+            VolumesCreateParameters volCreate = DockerRunnerService.CreateVolumeRequest(gameKey, configUrl);
+            Assert.Null(volCreate);
+
+            Mount m = DockerRunnerService.ConfigUrlToMount(gameKey, configUrl);
 
             Assert.NotNull(m);
             Assert.Equal("/factorio", m.Target);
             Assert.Equal("bind", m.Type);
             Assert.Equal("/localpath/save/path/", m.Source);
+        }
+
+        [Fact]
+        public void TestMountWithNFSFile()
+        {
+            string gameKey = "test-game-key";
+            Uri configUrl = new Uri("nfs://nfs-server/path/to/save");
+
+            VolumesCreateParameters volCreate = DockerRunnerService.CreateVolumeRequest(gameKey, configUrl);
+            Assert.NotNull(volCreate);
+            Assert.Equal("local", volCreate.Driver);
+            Assert.Equal("factorio-volume-test-game-key", volCreate.Name);
+            AssertDictContains(volCreate.DriverOpts, "device", "/path/to/save");
+            AssertDictContains(volCreate.DriverOpts, "type", "nfs");
+            AssertDictContains(volCreate.DriverOpts, "o", "addr=nfs-server,vers=4,soft");
+
+            VolumeResponse volumeResponse = new VolumeResponse
+            {
+                Name = "docker-volume"
+            };
+
+            Mount m = DockerRunnerService.ConfigUrlToMount(gameKey, configUrl);
+
+            Assert.NotNull(m);
+            Assert.Equal("/factorio", m.Target);
+        }
+
+        private void AssertDictContains(IDictionary<string, string> dict, string key, string value)
+        {
+            Assert.True(dict.TryGetValue(key, out string dictValue));
+            Assert.Equal(value, dictValue);
         }
 
         [Fact]
@@ -97,6 +134,7 @@ namespace Factorio.Test
             Assert.Equal("bind", containerInfo.Mounts[0].Type);
             //Assert.Equal(i.LocalPath, containerInfo.Mounts[0].Source); // On windows this is a weird translation
         }
+            
         /*
         [Fact]
         public async Task TestStartingMultipleWithSameIDAsync()

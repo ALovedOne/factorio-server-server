@@ -9,7 +9,7 @@ namespace Factorio.Services.Persistence.FileSystems
     {
         public NFSInstanceProvider(IOptions<InstanceProviderOptions> options, ILogger<NFSInstanceProvider> logger)
            : base(new DirectoryInfo(options.Value.BaseDirectory),
-                 new Uri("nfs://" + options.Value.HostName + "/" + options.Value.MountDirectory),
+                 new Uri("nfs://" + options.Value.HostName + "/" + options.Value.MountDirectory + "/"),
                  logger)
         { }
     }

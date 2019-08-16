@@ -177,8 +177,8 @@ namespace Factorio.Services.Execution.DockerImplementation
 
             if (r != null)
             {
+                await _dockerClient.Volumes.RemoveAsync(r.Name, true);
                 VolumeResponse vol = await this._dockerClient.Volumes.CreateAsync(CreateVolumeRequest(key, configUri));
-                // TODO error handling
             }
 
             Mount factorioMount = ConfigUrlToMount(key, configUri);
